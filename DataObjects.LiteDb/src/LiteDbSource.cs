@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public class LiteDbSource : IIdDataSource
+public sealed class LiteDbSource : IIdDataSource
 {
     public LiteDbSource(LiteDatabase database)
     {
@@ -22,25 +22,25 @@ public class LiteDbSource : IIdDataSource
     public async ValueTask<string?> TryLoadIndex(string index)
         => await Task.Run(() => indexes.FindById(index)?["EntityId"]);
 
-    public async ValueTask Save(IEnumerable<IdData> entities, IEnumerable<string> deletedEntities, IEnumerable<KeyValuePair<string, string>> indexes, IEnumerable<string> deletedIndexes)
+    public async ValueTask Save(IEnumerable<IdData> changedEntities, IEnumerable<string> deletedEntities, IEnumerable<KeyValuePair<string, string>> changedIndexes, IEnumerable<string> deletedIndexes)
         => await Task.Run(() =>
         {
             try
             {
                 database.BeginTrans();
 
-                this.entities.Upsert(entities);
+                entities.Upsert(changedEntities);
 
                 foreach (string id in deletedEntities)
                 {
-                    this.entities.Delete(id);
+                    entities.Delete(id);
                 }
 
-                this.indexes.Upsert(indexes.Select(x => new BsonDocument() { ["_id"] = x.Key, ["EntityId"] = x.Value }));
+                indexes.Upsert(changedIndexes.Select(x => new BsonDocument() { ["_id"] = x.Key, ["EntityId"] = x.Value }));
 
                 foreach (string index in deletedIndexes)
                 {
-                    this.indexes.Delete(index);
+                    indexes.Delete(index);
                 }
 
                 database.Commit();

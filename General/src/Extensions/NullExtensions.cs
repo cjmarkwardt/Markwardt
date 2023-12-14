@@ -4,7 +4,7 @@ public static class NullExtensions
 {
     public static T NotNull<T>(this T? obj, string? message = null)
         where T : class
-        => obj ?? throw new NullReferenceException(message ?? obj?.GetType().FullName ?? typeof(T).FullName);
+        => obj ?? throw new InvalidOperationException(message ?? "Value is null");
 
     public static bool TryNotNull<T>(this T? target, [NotNullWhen(true)] out T? output)
         where T : class
@@ -15,7 +15,7 @@ public static class NullExtensions
 
     public static T ValueNotNull<T>(this T? obj, string? message = null)
         where T : struct
-        => obj ?? throw new NullReferenceException(message ?? obj?.GetType().FullName ?? typeof(T).FullName);
+        => obj ?? throw new InvalidOperationException(message ?? "Value is null");
         
     public static bool TryValueNotNull<T>(this T? target, [NotNullWhen(true)] out T? output)
         where T : struct

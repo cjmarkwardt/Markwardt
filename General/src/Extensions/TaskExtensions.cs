@@ -19,7 +19,7 @@ public static class TaskExtensions
         Type type = task.GetType();
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Task<>))
         {
-            return type.GetGenericArguments().First();
+            return type.GetGenericArguments()[0];
         }
         else
         {
@@ -32,7 +32,7 @@ public static class TaskExtensions
         Type type = task.GetType();
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ValueTask<>))
         {
-            return type.GetGenericArguments().First();
+            return type.GetGenericArguments()[0];
         }
         else
         {
@@ -42,9 +42,6 @@ public static class TaskExtensions
 
     public static async ValueTask<T?> Specify<T>(this ValueTask<object?> task)
         => (T?) await task;
-
-    public static async ValueTask<object?> Generalize<T>(this ValueTask<T?> task)
-        => await task;
 
     public static object Specify(this ValueTask<object?> task, Type resultType)
     {
@@ -57,6 +54,9 @@ public static class TaskExtensions
         return specifier(task);
     }
 
+    public static async ValueTask<object?> Generalize<T>(this ValueTask<T?> task)
+        => await task;
+
     public static ValueTask<object?> Generalize(object task)
     {
         Type type = task.GetType();
@@ -65,7 +65,7 @@ public static class TaskExtensions
             throw new InvalidOperationException();
         }
 
-        Type resultType = type.GetGenericArguments().First();
+        Type resultType = type.GetGenericArguments()[0];
 
         if (!generalizers.TryGetValue(resultType, out Generalizer? generalizer))
         {

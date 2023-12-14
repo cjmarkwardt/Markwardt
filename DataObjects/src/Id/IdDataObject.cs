@@ -5,7 +5,7 @@ public interface IIdDataObject : IDataObject
     string Id { get; }
 }
 
-public class IdDataObject(IIdDataModel model, Action destroyClaim) : DynamicObject, IIdDataObject, IDataAccessor
+public sealed class IdDataObject(IIdDataModel model, Action destroyClaim) : DynamicObject, IIdDataObject, IDataAccessor
 {
     private IIdDataModel DataModel => model;
 

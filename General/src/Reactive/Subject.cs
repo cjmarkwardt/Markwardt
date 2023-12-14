@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public class Subject : Observer, ISubject<bool>, IObservable, IDisposable
+public sealed class Subject : Observer, ISubject<bool>, IObservable, IDisposable
 {
     private readonly Subject<bool> subject = new();
 

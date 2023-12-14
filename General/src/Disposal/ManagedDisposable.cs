@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IManagedDisposable : IDisposalViewer, IDisposalTracker, IDisposable;
+public interface IManagedDisposable : IDisposalViewer, IDisposalTracker;
 
 public class ManagedDisposable : IManagedDisposable
 {

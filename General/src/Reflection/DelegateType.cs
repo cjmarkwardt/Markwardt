@@ -70,8 +70,8 @@ public class DelegateType
             throw new InvalidOperationException($"Delegate {Type} must be closed");
         }
 
-        IEnumerable<ParameterExpression> parameters = GenerateParameters();
-        return Expression.Lambda(Type, Expression.Convert(Expression.Invoke(implementation, GenerateArguments(parameters)), Return), parameters).Compile();
+        IEnumerable<ParameterExpression> generatedParameters = GenerateParameters();
+        return Expression.Lambda(Type, Expression.Convert(Expression.Invoke(implementation, GenerateArguments(generatedParameters)), Return), generatedParameters).Compile();
     }
 
     public Delegate Implement(Expression<AsyncImplementation> implementation)
@@ -81,8 +81,8 @@ public class DelegateType
             throw new InvalidOperationException($"Delegate {Type} must be closed");
         }
 
-        IEnumerable<ParameterExpression> parameters = GenerateParameters();
-        return Expression.Lambda(Type, Expression.Call(typeof(TaskExtensions), nameof(TaskExtensions.Specify), [Return.GetGenericArguments().First()], Expression.Invoke(implementation, GenerateArguments(parameters))), parameters).Compile();
+        IEnumerable<ParameterExpression> generatedParameters = GenerateParameters();
+        return Expression.Lambda(Type, Expression.Call(typeof(TaskExtensions), nameof(TaskExtensions.Specify), [Return.GetGenericArguments()[0]], Expression.Invoke(implementation, GenerateArguments(generatedParameters))), generatedParameters).Compile();
     }
 
     private IEnumerable<ParameterExpression> GenerateParameters()

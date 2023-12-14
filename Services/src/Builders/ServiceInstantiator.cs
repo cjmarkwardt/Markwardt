@@ -5,9 +5,9 @@ public class ServiceInstantiator(Type implementation, Func<Type, MethodBase?>? m
     private static MethodBase? LocateMethod(Type type)
     {
         bool IsCopyConstructor(ConstructorInfo constructor)
-            => constructor.GetParameters().Length == 1 && constructor.GetParameters().First().ParameterType == type;
+            => constructor.GetParameters().Length == 1 && constructor.GetParameters()[0].ParameterType == type;
 
-        IEnumerable<MethodBase> methods = type.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).Where(c => !IsCopyConstructor(c)).Cast<MethodBase>().Concat(type.GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic));
+        IEnumerable<MethodBase> methods = type.GetConstructors().Where(c => !IsCopyConstructor(c)).Cast<MethodBase>().Concat(type.GetMethods(BindingFlags.Static | BindingFlags.Public));
 
         MethodBase? attributed = methods.FirstOrDefault(m => m.GetCustomAttribute<FactoryTargetAttribute>() != null);
         if (attributed != null)
@@ -34,15 +34,15 @@ public class ServiceInstantiator(Type implementation, Func<Type, MethodBase?>? m
     private readonly TypeGeneralizer generalizer = new(implementation);
     private readonly Dictionary<IReadOnlyDictionary<string, Type>, ServiceConstructor> invokers = new(new TypeArgumentComparer());
 
-    public async ValueTask<object> Build(IServiceResolver resolver, IReadOnlyDictionary<string, object?>? incomingArguments = null)
+    public async ValueTask<object> Build(IServiceResolver services, IReadOnlyDictionary<string, object?>? arguments = null)
     {
-        IReadOnlyDictionary<string, Type> typeArguments = generalizer.GetTypeArguments(incomingArguments);
+        IReadOnlyDictionary<string, Type> typeArguments = generalizer.GetTypeArguments(arguments);
         if (!invokers.TryGetValue(typeArguments, out ServiceConstructor? constructor))
         {
             constructor = new ServiceConstructor(methodLocator(generalizer.Specify(typeArguments)).NotNull());
             invokers.Add(typeArguments, constructor);
         }
 
-        return await constructor.Build(resolver, incomingArguments);
+        return await constructor.Build(services, arguments);
     }
 }

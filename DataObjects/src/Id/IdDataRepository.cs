@@ -6,12 +6,13 @@ public interface IIdDataRepository : IDataRepository, IIdDataLoader
     delegate IIdDataRepository Factory(IIdDataSource source);
 }
 
-public class IdDataRepository : IIdDataRepository, IIdDataNotifier
+public class IdDataRepository : Component, IIdDataRepository, IIdDataNotifier
 {
     public IdDataRepository(IIdDataSource depot)
     {
-        this.depot = depot;
+        this.depot = depot.DisposeWith(this);
         directLoader = new(this);
+        executor.DisposeWith(this);
     }
 
     private readonly IIdDataSource depot;
@@ -50,20 +51,20 @@ public class IdDataRepository : IIdDataRepository, IIdDataNotifier
     public async ValueTask Save()
         => await executor.Execute(async () =>
         {
-            IEnumerable<IdData> changedEntities = entities.Select(x => x.Export()).ToList();
+            IEnumerable<IdData> previousChangedEntities = entities.Select(x => x.Export()).ToList();
             entities.Clear();
             expiredEntities.Clear();
 
-            IEnumerable<string> deletedEntities = this.deletedEntities;
-            this.deletedEntities = [];
+            IEnumerable<string> previousDeletedEntities = deletedEntities;
+            deletedEntities = [];
 
-            IEnumerable<KeyValuePair<string, string>> changedIndexes = this.changedIndexes;
-            this.changedIndexes = [];
+            IEnumerable<KeyValuePair<string, string>> previousChangedIndexes = changedIndexes;
+            changedIndexes = [];
 
-            IEnumerable<string> deletedIndexes = this.deletedIndexes;
-            this.deletedIndexes = [];
+            IEnumerable<string> previousDeletedIndexes = deletedIndexes;
+            deletedIndexes = [];
 
-            await depot.Save(changedEntities, deletedEntities, changedIndexes, deletedIndexes);
+            await depot.Save(previousChangedEntities, previousDeletedEntities, previousChangedIndexes, previousDeletedIndexes);
         });
 
     public async ValueTask Clean()
@@ -73,18 +74,6 @@ public class IdDataRepository : IIdDataRepository, IIdDataNotifier
             expiredEntities.Clear();
             await depot.Save(changedEntities, Enumerable.Empty<string>(), Enumerable.Empty<KeyValuePair<string, string>>(), Enumerable.Empty<string>());
         });
-
-    public void Dispose()
-    {
-        executor.Dispose();
-        depot.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await executor.DisposeAsync();
-        await depot.DisposeAsync();
-    }
 
     void IIdDataNotifier.MarkEntityDeleted(string id)
         => deletedEntities.Add(id);
@@ -135,7 +124,7 @@ public class IdDataRepository : IIdDataRepository, IIdDataNotifier
         return Create(await IdDataModel.Load(this, this, directLoader, typeNamer, data));
     }
 
-    private class DirectLoader(IdDataRepository repository) : IIdDataLoader
+    private sealed class DirectLoader(IdDataRepository repository) : IIdDataLoader
     {
         public async ValueTask<IDataObject?> TryLoad(string id)
             => await repository.DirectLoad(id);

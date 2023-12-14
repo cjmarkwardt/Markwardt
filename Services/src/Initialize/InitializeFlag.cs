@@ -10,7 +10,7 @@ public static class InitializeFlag
     public static void SetInitialized(object target)
         => flags.AddOrUpdate(target, Flag.Instance);
 
-    private class Flag
+    private sealed class Flag
     {
         public static Flag Instance { get; } = new();
 

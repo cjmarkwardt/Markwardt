@@ -97,7 +97,7 @@ public class ServiceContainer : ManagedAsyncDisposable, IServiceContainer
         return registration;
     }
 
-    private class Registration(IServiceDescription description) : IDisposable, IAsyncDisposable
+    private sealed class Registration(IServiceDescription description) : IDisposable, IAsyncDisposable
     {
         private object? instance;
 

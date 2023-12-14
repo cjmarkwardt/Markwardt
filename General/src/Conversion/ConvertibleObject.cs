@@ -25,9 +25,6 @@ public static class ConvertibleObjectExtensions
         }
     }
 
-    public static object? Convert(this object target, Type type)
-        => target.TryConvert(type, out object? converted) ? converted : throw new InvalidOperationException($"Cannot convert {target.GetType()} to {type}");
-
     public static bool TryConvert<T>(this object target, out T converted)
     {
         if (target.TryConvert(typeof(T), out object? rawConverted))
@@ -41,6 +38,9 @@ public static class ConvertibleObjectExtensions
             return false;
         }
     }
+
+    public static object? Convert(this object target, Type type)
+        => target.TryConvert(type, out object? converted) ? converted : throw new InvalidOperationException($"Cannot convert {target.GetType()} to {type}");
 
     public static T Convert<T>(this object target)
         => (T)target.Convert(typeof(T))!;

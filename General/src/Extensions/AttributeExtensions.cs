@@ -15,13 +15,6 @@ public static class AttributeExtensions
         return attribute != null;
     }
 
-    public static bool HasCustomAttribute(this MemberInfo member, Type attributeType)
-        => member.GetCustomAttribute(attributeType) != null;
-
-    public static bool HasCustomAttribute<TAttribute>(this MemberInfo member)
-        where TAttribute : Attribute
-        => member.GetCustomAttribute<TAttribute>() != null;
-
     public static bool TryGetCustomAttribute(this ParameterInfo member, Type attributeType, [NotNullWhen(true)] out Attribute? attribute)
     {
         attribute = member.GetCustomAttribute(attributeType);
@@ -34,6 +27,13 @@ public static class AttributeExtensions
         attribute = member.GetCustomAttribute<TAttribute>();
         return attribute != null;
     }
+
+    public static bool HasCustomAttribute(this MemberInfo member, Type attributeType)
+        => member.GetCustomAttribute(attributeType) != null;
+
+    public static bool HasCustomAttribute<TAttribute>(this MemberInfo member)
+        where TAttribute : Attribute
+        => member.GetCustomAttribute<TAttribute>() != null;
 
     public static bool HasCustomAttribute(this ParameterInfo member, Type attributeType)
         => member.GetCustomAttribute(attributeType) != null;

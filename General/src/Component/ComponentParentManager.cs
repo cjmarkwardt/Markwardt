@@ -5,7 +5,7 @@ public interface IComponentParentManager : IDisposable
     IComponent? Parent { get; set; }
 }
 
-public class ComponentParentManager(IComponent component) : IComponentParentManager
+public sealed class ComponentParentManager(IComponent component) : IComponentParentManager
 {
     private bool isDisposed;
     private IDisposable? logRouting;

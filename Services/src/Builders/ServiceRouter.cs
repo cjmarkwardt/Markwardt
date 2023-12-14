@@ -4,6 +4,6 @@ public class ServiceRouter(object key, IServiceResolver? resolver = null) : ISer
 {
     private readonly IServiceResolver? resolver = resolver;
 
-    public async ValueTask<object> Build(IServiceResolver resolver, IReadOnlyDictionary<string, object?>? arguments = null)
-        => await (this.resolver ?? resolver).Require(key);
+    public async ValueTask<object> Build(IServiceResolver services, IReadOnlyDictionary<string, object?>? arguments = null)
+        => await (this.resolver ?? services).Require(key);
 }

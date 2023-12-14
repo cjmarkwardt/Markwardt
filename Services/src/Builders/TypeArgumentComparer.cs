@@ -19,7 +19,7 @@ public class TypeArgumentComparer : IEqualityComparer<IReadOnlyDictionary<string
         return hash.ToHashCode();
     }
 
-    private class PairComparer : IEqualityComparer<KeyValuePair<string, Type>>
+    private sealed class PairComparer : IEqualityComparer<KeyValuePair<string, Type>>
     {
         public bool Equals(KeyValuePair<string, Type> x, KeyValuePair<string, Type> y)
             => x.Key == y.Key && x.Value == y.Value;

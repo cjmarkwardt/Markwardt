@@ -17,7 +17,7 @@ public static class SequentialExecutorExtensions
         => await executor.Execute<object?>(async () => { await action(); return null; });
 }
 
-public class SequentialExecutor : ISequentialExecutor
+public sealed class SequentialExecutor : ISequentialExecutor
 {
     private TaskCompletionSource? lastExecute;
     private bool isDisposed;

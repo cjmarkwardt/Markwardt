@@ -28,12 +28,12 @@ public class ServiceDelegator : IServiceBuilder
     private readonly TypeGeneralizer generalizer;
     private readonly Dictionary<IReadOnlyDictionary<string, Type>, Delegate> delegates = new(new TypeArgumentComparer());
 
-    public ValueTask<object> Build(IServiceResolver resolver, IReadOnlyDictionary<string, object?>? arguments = null)
+    public ValueTask<object> Build(IServiceResolver services, IReadOnlyDictionary<string, object?>? arguments = null)
     {
         IReadOnlyDictionary<string, Type> typeArguments = generalizer.GetTypeArguments(arguments);
         if (!delegates.TryGetValue(typeArguments, out Delegate? @delegate))
         {
-            @delegate = generalizer.Specify(typeArguments).AsDelegate()!.Implement(arguments => builder.Build(resolver, arguments)!);
+            @delegate = generalizer.Specify(typeArguments).AsDelegate()!.Implement(arguments => builder.Build(services, arguments)!);
             delegates.Add(typeArguments, @delegate);
         }
 

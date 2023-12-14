@@ -31,7 +31,7 @@ public static class DisposalTrackerExtensions
     }
 }
 
-public class DisposalTracker : IDisposalTracker, IMultiDisposable
+public sealed class DisposalTracker : IDisposalTracker, IMultiDisposable
 {
     private readonly HashSet<object> disposables = [];
 

@@ -37,9 +37,7 @@ public class IdDataModel : IIdDataModel
 
             if (property.PropertyType.HasGenericTypeDefinition(typeof(IDataLink<>)))
             {
-                Type target = property.PropertyType.GetGenericArguments().First();
-                string? targetProperty = property.GetCustomAttribute<DataRelationshipAttribute>()?.PropertyName;
-
+                Type target = property.PropertyType.GetGenericArguments()[0];
                 Type classType = typeof(IdDataLink<>).MakeGenericType(target);
 
                 string? targetId;
@@ -83,7 +81,7 @@ public class IdDataModel : IIdDataModel
             }
             else if (property.PropertyType.HasGenericTypeDefinition(typeof(IDataLinkSet<>)))
             {
-                Type classType = typeof(IdDataLinkSet<>).MakeGenericType(property.PropertyType.GetGenericArguments().First());
+                Type classType = typeof(IdDataLinkSet<>).MakeGenericType(property.PropertyType.GetGenericArguments()[0]);
 
                 IEnumerable<string> targetIds;
                 if (value is IIdDataLinkSet linkSet)

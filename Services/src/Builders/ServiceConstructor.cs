@@ -5,7 +5,7 @@ public class ServiceConstructor(MethodBase method) : IServiceBuilder
     private readonly MethodGeneralizer generalizer = new(method);
     private readonly Dictionary<IReadOnlyDictionary<string, Type>, Invocation> invocations = new(new TypeArgumentComparer());
 
-    public async ValueTask<object> Build(IServiceResolver resolver, IReadOnlyDictionary<string, object?>? arguments = null)
+    public async ValueTask<object> Build(IServiceResolver services, IReadOnlyDictionary<string, object?>? arguments = null)
     {
         IReadOnlyDictionary<string, Type> typeArguments = generalizer.GetTypeArguments(arguments);
         if (!invocations.TryGetValue(typeArguments, out Invocation? invocation))
@@ -14,10 +14,10 @@ public class ServiceConstructor(MethodBase method) : IServiceBuilder
             invocations.Add(typeArguments, invocation);
         }
 
-        return await invocation.Invoke(resolver, arguments);
+        return await invocation.Invoke(services, arguments);
     }
 
-    private class Invocation
+    private sealed class Invocation
     {
         private delegate ValueTask<object> InvokeTarget(object?[]? arguments);
         
@@ -60,7 +60,7 @@ public class ServiceConstructor(MethodBase method) : IServiceBuilder
 
                 if (returnType.TryGetGenericTypeDefinition() == typeof(ValueTask<>))
                 {
-                    body = Expression.Call(typeof(TaskExtensions), nameof(TaskExtensions.Generalize), [directMethod.ReturnType.GetGenericArguments().First()], Expression.Call(directMethod, CreateArguments(directMethod)));
+                    body = Expression.Call(typeof(TaskExtensions), nameof(TaskExtensions.Generalize), [directMethod.ReturnType.GetGenericArguments()[0]], Expression.Call(directMethod, CreateArguments(directMethod)));
                 }
                 else if (returnType.TryGetGenericTypeDefinition() == typeof(Task<>))
                 {
