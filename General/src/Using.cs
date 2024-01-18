@@ -5,6 +5,7 @@ global using System.Collections.ObjectModel;
 global using System.Reactive.Subjects;
 global using System.Runtime.CompilerServices;
 global using System.ComponentModel;
+global using System.Text;
 
 global using Optional;
 global using Optional.Unsafe;

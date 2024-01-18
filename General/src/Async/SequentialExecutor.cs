@@ -8,10 +8,10 @@ public interface ISequentialExecutor : IMultiDisposable
 public static class SequentialExecutorExtensions
 {
     public static async ValueTask Execute(this ISequentialExecutor executor, Action action)
-        => await executor.Execute(() => { action(); return new ValueTask<object?>(null); });
+        => await executor.Execute(() => { action(); return ValueTask.FromResult<object?>(null); });
 
     public static async ValueTask<T> Execute<T>(this ISequentialExecutor executor, Func<T> action)
-        => await executor.Execute(() => new ValueTask<T>(action()));
+        => await executor.Execute(() => ValueTask.FromResult(action()));
 
     public static async ValueTask Execute(this ISequentialExecutor executor, Func<ValueTask> action)
         => await executor.Execute<object?>(async () => { await action(); return null; });
