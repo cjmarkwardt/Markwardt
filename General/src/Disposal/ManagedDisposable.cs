@@ -2,7 +2,7 @@ namespace Markwardt;
 
 public interface IManagedDisposable : IDisposalViewer, IDisposalTracker;
 
-public class ManagedDisposable : IManagedDisposable
+public class ManagedDisposable : ReactiveObject, IManagedDisposable
 {
     protected DisposalTracker Tracker { get; } = new();
 

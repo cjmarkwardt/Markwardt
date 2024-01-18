@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IComponent : IMultiDisposable, IDisposalViewer, IDisposalTracker, ILogger
+public interface IComponent : IMultiDisposable, IDisposalViewer, IDisposalTracker, ILogger, INotifyPropertyChanged, INotifyPropertyChanging
 {
     IComponent? Parent { get; set; }
 }
@@ -16,6 +16,7 @@ public class Component : ManagedAsyncDisposable, IComponent
     private readonly IComponentParentManager parentManager;
 
     private readonly Subject<LogReport> logReported = new();
+
     public IObservable<LogReport> LogReported => logReported;
 
     public IComponent? Parent { get => parentManager.Parent; set => parentManager.Parent = value; }

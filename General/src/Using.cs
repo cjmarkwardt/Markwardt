@@ -10,3 +10,5 @@ global using Optional;
 global using Optional.Unsafe;
 
 global using ReactiveUI;
+
+global using DynamicData.Kernel;
