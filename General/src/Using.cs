@@ -6,6 +6,7 @@ global using System.Reactive.Subjects;
 global using System.Runtime.CompilerServices;
 global using System.ComponentModel;
 global using System.Text;
+global using System.Numerics;
 
 global using Optional;
 global using Optional.Unsafe;
