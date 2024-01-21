@@ -7,6 +7,7 @@ global using System.Runtime.CompilerServices;
 global using System.ComponentModel;
 global using System.Text;
 global using System.Numerics;
+global using System.Text.Json.Nodes;
 
 global using Optional;
 global using Optional.Unsafe;
