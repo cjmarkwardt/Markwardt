@@ -109,4 +109,33 @@ public static class TaskExtensions
 
     public static void Fork(this Func<Task> task)
         => task().Fork();
+
+    public static async ValueTask<Failable> WaitFor(AsyncFunc<CancellationToken, Failable<bool>> condition, TimeSpan interval, TimeSpan timeout, CancellationToken cancellation = default)
+    {
+        DateTime expiration = DateTime.Now + timeout;
+        do
+        {
+            Failable<bool> tryCondition = await condition(cancellation);
+            if (tryCondition.Exception != null)
+            {
+                return tryCondition.Exception;
+            }
+            else if (tryCondition.Result)
+            {
+                return Failable.Success();
+            }
+
+            try
+            {
+                await Task.Delay(interval, cancellation);
+            }
+            catch (OperationCanceledException)
+            {
+                return Failable.Cancel();
+            }
+        }
+        while (DateTime.Now < expiration);
+
+        return Failable.Timeout();
+    }
 }

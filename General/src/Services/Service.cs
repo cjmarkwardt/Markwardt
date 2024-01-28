@@ -18,13 +18,13 @@ public static class Service
         => FromDelegate(kind, async _ => await function());
 
     public static IServiceDescription FromDelegate(ServiceKind kind, Func<IServiceResolver, IReadOnlyDictionary<string, object?>?, object> function)
-        => FromDelegate(kind, (resolver, arguments) => new(function(resolver, arguments)));
+        => FromDelegate(kind, (resolver, arguments) => ValueTask.FromResult(function(resolver, arguments)));
 
     public static IServiceDescription FromDelegate(ServiceKind kind, Func<IServiceResolver, object> function)
-        => FromDelegate(kind, resolver => new(function(resolver)));
+        => FromDelegate(kind, resolver => ValueTask.FromResult(function(resolver)));
 
     public static IServiceDescription FromDelegate(ServiceKind kind, Func<object> function)
-        => FromDelegate(kind, () => new(function()));
+        => FromDelegate(kind, () => ValueTask.FromResult(function()));
 
     public static IServiceDescription FromMethod(ServiceKind kind, MethodBase method)
         => FromBuilder(kind, new ServiceConstructor(method));
@@ -49,21 +49,17 @@ public static class Service
         => FromDelegate(kind, async provider => await get(await provider.Require(key)));
 
     public static IServiceDescription FromSource(ServiceKind kind, object key, Func<object, object> get)
-        => FromSource(kind, key, x => new(get(x)));
+        => FromSource(kind, key, x => ValueTask.FromResult(get(x)));
 
-    public static IServiceDescription FromSourceDefault<TSource, T>(ServiceKind kind, AsyncFunc<TSource, T> get)
-        where T : notnull
+    public static IServiceDescription FromSourceDefault<TSource>(ServiceKind kind, AsyncFunc<TSource, object> get)
         => FromSource(kind, typeof(TSource), async source => await get((TSource)source));
 
-    public static IServiceDescription FromSourceDefault<TSource, T>(ServiceKind kind, Func<TSource, T> get)
-        where T : notnull
-        => FromSourceDefault<TSource, T>(kind, x => new(get(x)));
+    public static IServiceDescription FromSourceDefault<TSource>(ServiceKind kind, Func<TSource, object> get)
+        => FromSourceDefault<TSource>(kind, x => ValueTask.FromResult(get(x)));
 
-    public static IServiceDescription FromSourceTag<TSourceTag, TSource, T>(ServiceKind kind, AsyncFunc<TSource, T> get)
-        where T : notnull
+    public static IServiceDescription FromSourceTag<TSourceTag, TSource>(ServiceKind kind, AsyncFunc<TSource, object> get)
         => FromSource(kind, typeof(TSourceTag), async source => await get((TSource)source));
 
-    public static IServiceDescription FromSourceTag<TSourceTag, TSource, T>(ServiceKind kind, Func<TSource, T> get)
-        where T : notnull
-        => FromSourceTag<TSourceTag, TSource, T>(kind, x => new(get(x)));
+    public static IServiceDescription FromSourceTag<TSourceTag, TSource>(ServiceKind kind, Func<TSource, object> get)
+        => FromSourceTag<TSourceTag, TSource>(kind, x => ValueTask.FromResult(get(x)));
 }
