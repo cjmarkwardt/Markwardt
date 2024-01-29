@@ -41,4 +41,7 @@ public static class FileNodeExtensions
             node = parent;
         }
     }
+
+    public static string? GetLocalPath(this IFileNode node)
+        => node is LocalFileNode ? node.FullName : null;
 }

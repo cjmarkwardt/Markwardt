@@ -1,13 +1,13 @@
 namespace Markwardt;
 
-public class LocalFileNode(string path) : IFile, IFolder
+public record LocalFileNode(string Path) : IFile, IFolder
 {
-    public string Name => Path.GetFileName(path).TrimEnd('/', '\\');
-    public string FullName => path.TrimEnd('/', '\\');
+    public string Name => System.IO.Path.GetFileName(Path).TrimEnd('/', '\\');
+    public string FullName => Path.TrimEnd('/', '\\');
 
     public IFolder Ascend()
     {
-        string? parent = Path.GetDirectoryName(path);
+        string? parent = System.IO.Path.GetDirectoryName(Path);
         if (parent == null)
         {
             return this;
@@ -74,11 +74,14 @@ public class LocalFileNode(string path) : IFile, IFolder
         return Failable.Success();
     }
 
+    public override string ToString()
+        => FullName;
+
     async ValueTask<Failable<bool>> IFile.Exists(CancellationToken cancellation)
         => await FileExists();
 
     async ValueTask<Failable> IFile.Create(bool verify, CancellationToken cancellation)
-        => await Execute(NodeType.File, () => File.Create(path).Dispose(), verify, true, $"File creation failed for {path}", cancellation);
+        => await Execute(NodeType.File, () => File.Create(Path).Dispose(), verify, true, $"File creation failed for {Path}", cancellation);
 
     async ValueTask<Failable> IFile.Delete(bool verify, CancellationToken cancellation)
         => await FileDelete(verify, cancellation);
@@ -95,10 +98,10 @@ public class LocalFileNode(string path) : IFile, IFolder
             openMode = FileMode.Create;
         }
 
-        Failable<FileStream> tryOpen = await Task.Run(() => Failable.Guard(() => File.Open(path, openMode, readOnly ? FileAccess.Read : FileAccess.ReadWrite, FileShare.ReadWrite)));
+        Failable<FileStream> tryOpen = await Task.Run(() => Failable.Guard(() => File.Open(Path, openMode, readOnly ? FileAccess.Read : FileAccess.ReadWrite, FileShare.ReadWrite)));
         if (tryOpen.Exception != null)
         {
-            return tryOpen.Exception.AsFailable<Stream>($"Failed to open {path}");
+            return tryOpen.Exception.AsFailable<Stream>($"Failed to open {Path}");
         }
 
         return tryOpen.Result;
@@ -108,13 +111,13 @@ public class LocalFileNode(string path) : IFile, IFolder
         => await FolderExists();
 
     async ValueTask<Failable> IFolder.Create(bool verify, CancellationToken cancellation)
-        => await Execute(NodeType.Folder, () => Directory.CreateDirectory(path), verify, true, $"Folder creation failed for {path}", cancellation);
+        => await Execute(NodeType.Folder, () => Directory.CreateDirectory(Path), verify, true, $"Folder creation failed for {Path}", cancellation);
 
     async ValueTask<Failable> IFolder.Delete(bool verify, CancellationToken cancellation)
         => await FolderDelete(verify, cancellation);
 
     IFileNode IFileTree.Descend(string name)
-        => new LocalFileNode(Path.Combine(path, name));
+        => new LocalFileNode(System.IO.Path.Combine(Path, name));
 
     IAsyncEnumerable<Failable<IFile>> IFileTree.DescendAllFiles(bool recursive, CancellationToken cancellation)
         => DescendAll<IFile>(Directory.EnumerateFiles, recursive, p => new LocalFileNode(p));
@@ -123,16 +126,16 @@ public class LocalFileNode(string path) : IFile, IFolder
         => DescendAll<IFolder>(Directory.EnumerateDirectories, recursive, p => new LocalFileNode(p));
 
     private async ValueTask<Failable<bool>> FileExists()
-        => await Task.Run(() => Failable.Guard(() => File.Exists(path)));
+        => await Task.Run(() => Failable.Guard(() => File.Exists(Path)));
 
     private async ValueTask<Failable<bool>> FolderExists()
-        => await Task.Run(() => Failable.Guard(() => Directory.Exists(path)));
+        => await Task.Run(() => Failable.Guard(() => Directory.Exists(Path)));
 
     private async ValueTask<Failable> FileDelete(bool verify, CancellationToken cancellation = default)
-        => await Execute(NodeType.File, () => File.Delete(path), verify, false, $"File deletion failed for {path}", cancellation);
+        => await Execute(NodeType.File, () => File.Delete(Path), verify, false, $"File deletion failed for {Path}", cancellation);
 
     private async ValueTask<Failable> FolderDelete(bool verify, CancellationToken cancellation = default)
-        => await Execute(NodeType.Folder, () => Directory.Delete(path), verify, false, $"Folder deletion failed for {path}", cancellation);
+        => await Execute(NodeType.Folder, () => Directory.Delete(Path), verify, false, $"Folder deletion failed for {Path}", cancellation);
 
     private async ValueTask<Failable> WaitForExists(NodeType node, bool exists, CancellationToken cancellation)
         => await TaskExtensions.WaitFor(async cancellation =>
@@ -175,7 +178,7 @@ public class LocalFileNode(string path) : IFile, IFolder
     {
         await Task.CompletedTask;
 
-        IEnumerator<string> files = enumerate(path, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly).GetEnumerator();
+        IEnumerator<string> files = enumerate(Path, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly).GetEnumerator();
         while (true)
         {
             Failable<string> tryNext;

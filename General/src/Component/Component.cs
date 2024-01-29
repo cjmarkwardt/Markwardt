@@ -23,4 +23,21 @@ public class Component : ManagedAsyncDisposable, IComponent
 
     public void Log(LogReport report)
         => logReported.OnNext(report);
+
+    public void Log(string category, string message, [CallerFilePath] string sourcePath = "", [CallerLineNumber] int sourceLine = 0)
+        => Log(LogReport.FromCaller(category, message, sourcePath, sourceLine));
+
+    public void Error(string message, [CallerFilePath] string sourcePath = "", [CallerLineNumber] int sourceLine = 0)
+        => Log("Error", message, sourcePath, sourceLine);
+
+    public void Error(Exception exception, [CallerFilePath] string sourcePath = "", [CallerLineNumber] int sourceLine = 0)
+        => Error(exception.GetRecursiveMessage(), sourcePath, sourceLine);
+
+    public void Error(Failable failable, [CallerFilePath] string sourcePath = "", [CallerLineNumber] int sourceLine = 0)
+    {
+        if (failable.Exception != null)
+        {
+            Error(failable.Exception, sourcePath, sourceLine);
+        }
+    }
 }
