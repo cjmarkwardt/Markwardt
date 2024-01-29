@@ -31,16 +31,22 @@ public static class FileTreeExtensions
             if (tryDescendFile.Exception != null)
             {
                 yield return tryDescendFile.Exception;
-                yield break;
-            }
 
-            yield return tryDescendFile.Cast<IFileNode>();
+                if (tryDescendFile.Exception is OperationCanceledException)
+                {
+                    yield break;
+                }
+            }
+            else
+            {
+                yield return tryDescendFile.Cast<IFileNode>();
+            }
         }
 
         if (cancellation.IsCancellationRequested)
         {
-                yield return Failable.Cancel<IFileNode>();
-                yield break;
+            yield return Failable.Cancel<IFileNode>();
+            yield break;
         }
         
         await foreach (Failable<IFolder> tryDescendFolder in tree.DescendAllFolders(recursive, cancellation))
@@ -48,10 +54,16 @@ public static class FileTreeExtensions
             if (tryDescendFolder.Exception != null)
             {
                 yield return tryDescendFolder.Exception;
-                yield break;
-            }
 
-            yield return tryDescendFolder.Cast<IFileNode>();
+                if (tryDescendFolder.Exception is OperationCanceledException)
+                {
+                    yield break;
+                }
+            }
+            else
+            {
+                yield return tryDescendFolder.Cast<IFileNode>();
+            }
         }
     }
 }

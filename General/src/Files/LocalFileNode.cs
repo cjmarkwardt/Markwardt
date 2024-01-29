@@ -196,10 +196,11 @@ public class LocalFileNode(string path) : IFile, IFolder
             if (tryNext.Exception != null)
             {
                 yield return tryNext.Exception;
-                yield break;
             }
-
-            yield return create(tryNext.Result);
+            else
+            {
+                yield return create(tryNext.Result);
+            }
         }
     }
 
