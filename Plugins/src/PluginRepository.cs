@@ -59,25 +59,25 @@ public class PluginRepository(IFolder folder, IEnumerable<Type> sharedTypes) : C
                 return;
             }
 
-            IEnumerable<IFolder> folders = tryDescend.Result;
+            IEnumerable<IFolder> subFolders = tryDescend.Result;
 
-            foreach (IFolder folder in folders)
+            foreach (IFolder subFolder in subFolders)
             {
-                if (!modules.ContainsKey(folder.Name))
+                if (!modules.ContainsKey(subFolder.Name))
                 {
-                    Failable<IModule> tryRead = await ModuleReader.Read(folder.Name, folder, sharedTypes);
+                    Failable<IModule> tryRead = await ModuleReader.Read(subFolder.Name, subFolder, sharedTypes);
                     if (tryRead.Exception != null)
                     {
-                        Error(tryRead.Exception.AsFailable($"Failed to read module at {folder.FullName}"));
+                        Error(tryRead.Exception.AsFailable($"Failed to read module at {subFolder.FullName}"));
                     }
 
-                    modules.Add(folder.Name, tryRead.Result);
+                    modules.Add(subFolder.Name, tryRead.Result);
                 }
             }
 
             if (purge)
             {
-                IEnumerable<string> existingModules = folders.Select(x => x.Name).ToHashSet();
+                IEnumerable<string> existingModules = subFolders.Select(x => x.Name).ToHashSet();
                 
                 foreach (IModule purgedModule in modules.Values.Where(x => !existingModules.Contains(x.Id)))
                 {

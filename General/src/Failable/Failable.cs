@@ -91,25 +91,25 @@ public class Failable
         catch (Exception exception) { return exception; }
     }
 
-    public static async ValueTask<Failable<T>> GuardAsync<T>(AsyncFunc<T> execute)
+    public static async ValueTask<Failable<T>> GuardAsync<T>(Func<ValueTask<T>> execute)
     {
         try { return Success(await execute()); }
         catch (Exception exception) { return exception; }
     }
 
-    public static async ValueTask<Failable<T>> GuardAsync<T>(AsyncFunc<Failable<T>> execute)
+    public static async ValueTask<Failable<T>> GuardAsync<T>(Func<ValueTask<Failable<T>>> execute)
     {
         try { return await execute(); }
         catch (Exception exception) { return exception; }
     }
 
-    public static async ValueTask<Failable> GuardAsync(AsyncAction execute)
+    public static async ValueTask<Failable> GuardAsync(Func<ValueTask> execute)
     {
         try { await execute(); return Success(); }
         catch (Exception exception) { return exception; }
     }
 
-    public static async ValueTask<Failable> GuardAsync(AsyncFunc<Failable> execute)
+    public static async ValueTask<Failable> GuardAsync(Func<ValueTask<Failable>> execute)
     {
         try { return await execute(); }
         catch (Exception exception) { return exception; }

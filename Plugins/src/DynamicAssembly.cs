@@ -54,7 +54,7 @@ public class DynamicAssembly(IFile file, IEnumerable<Type> sharedTypes) : Compon
 
         if (loader == null)
         {
-            loader = PluginLoader.CreateFromAssemblyFile(file.GetLocalPath().NotNull($"Assembly file must be local at {file}"), true, sharedTypes);
+            loader = PluginLoader.CreateFromAssemblyFile(file.GetLocalPath().Result, true, sharedTypes);
         }
         else
         {

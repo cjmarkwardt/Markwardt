@@ -17,18 +17,30 @@ public class LocalFileTree : IFileTree
                 if (tryDescendFolder.Exception != null)
                 {
                     yield return tryDescendFolder.Exception;
-                    yield break;
-                }
 
-                await foreach (Failable<IFile> tryDescendFile in tryDescendFolder.Result.DescendAllFiles(true, cancellation))
-                {
-                    if (tryDescendFile.Exception != null)
+                    if (tryDescendFolder.Exception is OperationCanceledException)
                     {
-                        yield return tryDescendFile.Exception;
                         yield break;
                     }
+                }
+                else
+                {
+                    await foreach (Failable<IFile> tryDescendFile in tryDescendFolder.Result.DescendAllFiles(true, cancellation))
+                    {
+                        if (tryDescendFile.Exception != null)
+                        {
+                            yield return tryDescendFile.Exception;
 
-                    yield return tryDescendFile.Result.AsFailable();
+                            if (tryDescendFile.Exception is OperationCanceledException)
+                            {
+                                yield break;
+                            }
+                        }
+                        else
+                        {
+                            yield return tryDescendFile.Result.AsFailable();
+                        }
+                    }
                 }
             }
         }
@@ -49,15 +61,21 @@ public class LocalFileTree : IFileTree
 
             if (recursive)
             {
-                await foreach (Failable<IFolder> tryDescend in folder.DescendAllFolders(true, cancellation))
+                await foreach (Failable<IFolder> tryDescendFolder in folder.DescendAllFolders(cancellation: cancellation))
                 {
-                    if (tryDescend.Exception != null)
+                    if (tryDescendFolder.Exception != null)
                     {
-                        yield return tryDescend;
-                        yield break;
+                        yield return tryDescendFolder;
+                    
+                        if (tryDescendFolder.Exception is OperationCanceledException)
+                        {
+                            yield break;
+                        }
                     }
-
-                    yield return tryDescend.Result.AsFailable();
+                    else
+                    {
+                        yield return tryDescendFolder.Result.AsFailable();
+                    }
                 }
             }
         }

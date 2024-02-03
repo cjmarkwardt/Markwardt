@@ -1,7 +1,7 @@
 namespace Markwardt;
 
 [ServiceType(typeof(IFolder))]
-public class DesktopFolderTag : LocalFileNodeTag
+public class DesktopFolderTag : LocalSpecialFolderTag
 {
-    public override string Path => Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+    public override Environment.SpecialFolder Folder => Environment.SpecialFolder.Desktop;
 }

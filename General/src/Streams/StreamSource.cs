@@ -7,7 +7,7 @@ public interface IStreamSource
 
 public static class StreamSourceExtensions
 {
-    public static async ValueTask<Failable<TResult>> Operate<TResult>(this IStreamSource source, AsyncFunc<Stream, Failable<TResult>> action, CancellationToken cancellation = default)
+    public static async ValueTask<Failable<TResult>> Operate<TResult>(this IStreamSource source, AsyncFunc<Stream, TResult> operate, CancellationToken cancellation = default)
     {
         Failable<Stream> tryOpen = await source.Open(cancellation);
         if (tryOpen.Exception != null)
@@ -16,20 +16,20 @@ public static class StreamSourceExtensions
         }
 
         using Stream stream = tryOpen.Result;
-        
-        Failable<TResult> tryPrepare = await Failable.GuardAsync(async () => await action(stream));
-        if (tryPrepare.Exception != null)
+
+        Failable<TResult> tryOperate = await operate(stream, cancellation);
+        if (tryOperate.Exception != null)
         {
-            return tryPrepare.Exception;
+            return tryOperate.Exception;
         }
 
-        return tryPrepare.Result;
+        return tryOperate.Result;
     }
 
-    public static async ValueTask<Failable> Operate(this IStreamSource source, AsyncFunc<Stream, Failable> action, CancellationToken cancellation = default)
-        => await source.Operate<bool>(async stream =>
+    public static async ValueTask<Failable> Operate(this IStreamSource source, AsyncAction<Stream> action, CancellationToken cancellation = default)
+        => await source.Operate<bool>(async (stream, cancellation) =>
         {
-            Failable tryAction = await action(stream);
+            Failable tryAction = await action(stream, cancellation);
             if (tryAction.Exception != null)
             {
                 return tryAction.Exception;
@@ -38,41 +38,45 @@ public static class StreamSourceExtensions
             return true;
         }, cancellation);
 
-    public static async ValueTask<Failable> Truncate(this IStreamSource source, CancellationToken cancellation = default)
-        => await source.Operate(stream => { stream.SetLength(0); return Failable.Success(); }, cancellation);
+    public static async ValueTask<Failable> Write(this IStreamSource source, ReadOnlyMemory<byte> data, CancellationToken cancellation = default)
+        => await source.Operate(async (stream, _) => await Failable.GuardAsync(async () => await stream.WriteAsync(data, cancellation)), cancellation);
 
-    public static async ValueTask<Failable> Append(this IStreamSource source, ReadOnlyMemory<byte> data, CancellationToken cancellation = default)
-        => await source.Operate(async stream => { await stream.WriteAsync(data, cancellation); return Failable.Success(); }, cancellation);
-
-    public static async ValueTask<Failable> AppendText(this IStreamSource source, string text, Encoding? encoding = null, CancellationToken cancellation = default)
-        => await source.Append((encoding ?? Encoding.UTF8).GetBytes(text), cancellation);
-
-    public static async ValueTask<Failable> Overwrite(this IStreamSource source, ReadOnlyMemory<byte> data, CancellationToken cancellation = default)
-        => await source.Operate(async stream => { stream.SetLength(0); await stream.WriteAsync(data, cancellation); return Failable.Success(); }, cancellation);
-
-    public static async ValueTask<Failable> OverwriteText(this IStreamSource source, string text, Encoding? encoding = null, CancellationToken cancellation = default)
-        => await source.Overwrite((encoding ?? Encoding.UTF8).GetBytes(text), cancellation);
+    public static async ValueTask<Failable> WriteText(this IStreamSource source, string text, Encoding? encoding = null, CancellationToken cancellation = default)
+        => await source.Write((encoding ?? Encoding.UTF8).GetBytes(text), cancellation);
 
     public static async ValueTask<Failable<ReadOnlyMemory<byte>>> Read(this IStreamSource source, CancellationToken cancellation = default)
-        => await source.Operate(async stream =>
+        => await source.Operate(async (stream, cancellation) =>
         {
             using MemoryStream buffer = new();
-            await stream.CopyToAsync(buffer);
+            Failable tryCopy = await Failable.GuardAsync(async () => await stream.CopyToAsync(buffer, cancellation));
+            if (tryCopy.Exception != null)
+            {
+                return tryCopy.Exception;
+            }
+
             return Failable.Success<ReadOnlyMemory<byte>>(buffer.ToArray());
         }, cancellation);
 
     public static async ValueTask<Failable<string>> ReadText(this IStreamSource source, Encoding? encoding = null, CancellationToken cancellation = default)
     {
-        Failable<ReadOnlyMemory<byte>> tryRead = await source.Operate(async stream =>
+        Failable<ReadOnlyMemory<byte>> tryRead = await source.Operate(async (stream, cancellation) =>
         {
             using MemoryStream buffer = new();
-            await stream.CopyToAsync(buffer);
+            Failable tryCopy = await Failable.GuardAsync(async () => await stream.CopyToAsync(buffer, cancellation));
+            if (tryCopy.Exception != null)
+            {
+                return tryCopy.Exception;
+            }
 
             if (encoding is null)
             {
-                using StreamReader reader = new(buffer, Encoding.UTF8, true);
-                reader.Peek();
-                encoding = reader.CurrentEncoding;
+                Failable<Encoding> tryDetect = await buffer.DetectEncoding(Encoding.UTF8);
+                if (tryDetect.Exception != null)
+                {
+                    return tryDetect.Exception;
+                }
+                
+                encoding = tryDetect.Result;
             }
 
             return Failable.Success<ReadOnlyMemory<byte>>(buffer.ToArray());
@@ -83,6 +87,6 @@ public static class StreamSourceExtensions
             return tryRead.Exception;
         }
 
-        return (encoding ?? Encoding.Unicode).GetString(tryRead.Result.ToArray());
+        return (encoding ?? Encoding.UTF8).GetString(tryRead.Result.ToArray());
     }
 }

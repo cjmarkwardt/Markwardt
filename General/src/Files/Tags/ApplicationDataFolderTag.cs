@@ -1,7 +1,7 @@
 namespace Markwardt;
 
 [ServiceType(typeof(IFolder))]
-public class ApplicationDataFolderTag : LocalFileNodeTag
+public class ApplicationDataFolderTag : LocalSpecialFolderTag
 {
-    public override string Path => Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+    public override Environment.SpecialFolder Folder => Environment.SpecialFolder.ApplicationData;
 }
