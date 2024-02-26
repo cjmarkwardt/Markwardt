@@ -9,7 +9,11 @@ public interface IModuleReader
 public class ModuleReader : IModuleReader
 {
     public required IModule.Factory ModuleFactory { get; init; }
+    public required IDataStore.Factory DataStoreFactory { get; init; }
     public required IDynamicAssembly.Factory AssemblyFactory { get; init; }
+
+    [Inject<JsonDataTransformer>]
+    public required ITransformer<DataObject> JsonDataTransformer { get; init; }
 
     public async ValueTask<Failable<IModule>> Read(string id, IFolder folder, IEnumerable<Type> sharedTypes)
     {
@@ -29,6 +33,6 @@ public class ModuleReader : IModuleReader
         string author = profile["Author"]?.ToString() ?? string.Empty;
         string description = profile["Description"]?.ToString() ?? string.Empty;
 
-        return Failable.Success(await ModuleFactory(id, name, author, description, await AssemblyFactory(folder.Descend("Assembly.dll").AsFile(), sharedTypes)));
+        return Failable.Success(await ModuleFactory(id, name, author, description, DataStoreFactory(folder.Descend("Data.json").AsFile(), JsonDataTransformer), await AssemblyFactory(folder.Descend("Assembly.dll").AsFile(), sharedTypes), folder.Descend("Assets").AsFolder().AsReadSource()));
     }
 }

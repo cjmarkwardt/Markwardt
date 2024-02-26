@@ -8,6 +8,16 @@ public interface IServiceInitializer
 
 public static class ServiceInitializerExtensions
 {
+    public static async ValueTask TryAutoInitializeServices(this object target, IServiceResolver? services = null)
+    {
+        File.WriteAllText($"C:\\Users\\Chris\\Data\\Projects2\\Hammerlance.Breadstick\\Test", "Test");
+        services ??= GlobalServices.Resolver;
+        if (services != null)
+        {
+            await (await services.RequireDefault<IServiceInitializer>()).TryAutoInitialize(target, services);
+        }
+    }
+
     public static async ValueTask<bool> TryAutoInitialize(this IServiceInitializer initializer, object service, IServiceResolver resolver)
     {
         if (!InitializeFlag.IsInitialized(service))
@@ -43,6 +53,7 @@ public class ServiceInitializer : IServiceInitializer
         if (!maps.TryGetValue(type, out IServiceInitializeMap? map))
         {
             map = new ServiceInitializeMap(type);
+            File.WriteAllText($"C:\\Users\\Chris\\Data\\Projects2\\Hammerlance.Breadstick\\{type.Name}", string.Join(", ", map.Dependencies.Keys));
         }
 
         return map;

@@ -13,4 +13,16 @@ public static class StreamExtensions
 
         return reader.CurrentEncoding;
     }
+
+    public static async ValueTask<Failable<byte[]>> CopyToArray(this Stream stream, CancellationToken cancellation = default)
+    {
+        using MemoryStream buffer = new();
+        Failable tryCopy = await Failable.GuardAsync(async () => await stream.CopyToAsync(buffer, cancellation));
+        if (tryCopy.Exception != null)
+        {
+            return tryCopy.Exception;
+        }
+
+        return buffer.ToArray();
+    }
 }
