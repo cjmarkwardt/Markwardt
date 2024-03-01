@@ -5,4 +5,3 @@ global using System.Diagnostics.CodeAnalysis;
 global using System.ComponentModel;
 
 global using ImpromptuInterface;
-global using Optional;

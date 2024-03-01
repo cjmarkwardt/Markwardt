@@ -9,8 +9,8 @@ public interface IPluginRepository : IComplexDisposable, IEnumerable<IPlugin>
 
     ValueTask Refresh(bool purge = true);
 
-    Option<IModule> GetModule(string id);
-    Option<IPlugin> GetPlugin(string moduleId, string id);
+    IMaybe<IModule> GetModule(string id);
+    IMaybe<IPlugin> GetPlugin(string moduleId, string id);
 }
 
 public static class PluginRepositoryExtensions
@@ -87,11 +87,11 @@ public class PluginRepository(IFolder folder, IEnumerable<Type> sharedTypes) : C
             }
         });
 
-    public Option<IModule> GetModule(string id)
-        => modules.TryGetValue(id, out IModule? module) ? module.Some() : Option.None<IModule>();
+    public IMaybe<IModule> GetModule(string id)
+        => modules.TryGetValue(id, out IModule? module) ? module.AsMaybe() : Maybe<IModule>.Empty();
 
-    public Option<IPlugin> GetPlugin(string moduleId, string id)
-        => GetModule(moduleId).TryGetValue(out IModule? module) ? module.GetPlugin(id) : Option.None<IPlugin>();
+    public IMaybe<IPlugin> GetPlugin(string moduleId, string id)
+        => GetModule(moduleId).TryGetValue(out IModule module) ? module.GetPlugin(id) : Maybe<IPlugin>.Empty();
 
     public IEnumerator<IPlugin> GetEnumerator()
         => modules.Values.SelectMany(x => x).GetEnumerator();

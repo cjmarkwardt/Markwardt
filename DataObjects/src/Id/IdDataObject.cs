@@ -26,7 +26,7 @@ public sealed class IdDataObject(IIdDataModel model, Action destroyClaim) : Dyna
     public void Delete()
         => model.Delete();
 
-    public Option<object?> GetProperty(string name)
+    public IMaybe<object?> GetProperty(string name)
         => model.GetProperty(name);
 
     public bool SetProperty(string name, object? value)

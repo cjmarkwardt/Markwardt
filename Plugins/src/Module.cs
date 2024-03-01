@@ -16,13 +16,13 @@ public interface IModule : IComplexDisposable, IEnumerable<IPlugin>
     void Reload();
     bool Unload();
 
-    Option<IPlugin> GetPlugin(string id);
+    IMaybe<IPlugin> GetPlugin(string id);
 }
 
 public static class ModuleExtensions
 {
-    public static Option<T> GetPlugin<T>(this IModule module, string id)
-        => module.GetPlugin(id).Map(x => (T)x);
+    public static IMaybe<T> GetPlugin<T>(this IModule module, string id)
+        => module.GetPlugin(id).OfType<T>();
 }
 
 public class Module : ComplexDisposable, IModule
@@ -77,8 +77,8 @@ public class Module : ComplexDisposable, IModule
         return false;
     }
 
-    public Option<IPlugin> GetPlugin(string id)
-        => plugins.TryGetValue(id, out IPlugin? plugin) ? plugin.Some() : Option.None<IPlugin>();
+    public IMaybe<IPlugin> GetPlugin(string id)
+        => plugins.TryGetValue(id, out IPlugin? plugin) ? plugin.AsMaybe() : Maybe<IPlugin>.Empty();
 
     public IEnumerator<IPlugin> GetEnumerator()
         => plugins.Values.GetEnumerator();
