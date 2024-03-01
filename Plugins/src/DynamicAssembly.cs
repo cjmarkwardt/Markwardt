@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IDynamicAssembly : IComponent
+public interface IDynamicAssembly : IComplexDisposable
 {
     [Factory<DynamicAssembly>]
     delegate ValueTask<IDynamicAssembly> Factory(IFile file, IEnumerable<Type> sharedTypes);
@@ -13,7 +13,7 @@ public interface IDynamicAssembly : IComponent
     bool Unload();
 }
 
-public class DynamicAssembly(IFile file, IEnumerable<Type> sharedTypes) : Component, IDynamicAssembly
+public class DynamicAssembly(IFile file, IEnumerable<Type> sharedTypes) : ComplexDisposable, IDynamicAssembly
 {
     private readonly Type[] sharedTypes = sharedTypes.ToArray();
 
@@ -34,7 +34,7 @@ public class DynamicAssembly(IFile file, IEnumerable<Type> sharedTypes) : Compon
     [MemberNotNull(nameof(value))]
     public bool Load()
     {
-        Verify();
+        this.Verify();
 
         if (value == null)
         {
@@ -48,7 +48,7 @@ public class DynamicAssembly(IFile file, IEnumerable<Type> sharedTypes) : Compon
     [MemberNotNull(nameof(value))]
     public void Reload()
     {
-        Verify();
+        this.Verify();
 
         value = null;
 

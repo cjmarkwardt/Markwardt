@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IPluginRepository : IComponent, IEnumerable<IPlugin>
+public interface IPluginRepository : IComplexDisposable, IEnumerable<IPlugin>
 {
     [Factory<PluginRepository>]
     delegate ValueTask<IPluginRepository> Factory(IFolder folder, IEnumerable<Type> sharedTypes);
@@ -40,7 +40,7 @@ public static class PluginRepositoryExtensions
     }
 }
 
-public class PluginRepository(IFolder folder, IEnumerable<Type> sharedTypes) : Component, IPluginRepository
+public class PluginRepository(IFolder folder, IEnumerable<Type> sharedTypes) : ComplexDisposable, IPluginRepository
 {
     private readonly SequentialExecutor executor = new();
     private readonly Dictionary<string, IModule> modules = [];
@@ -49,13 +49,13 @@ public class PluginRepository(IFolder folder, IEnumerable<Type> sharedTypes) : C
 
     public IEnumerable<IModule> Modules => modules.Values;
 
-    public ValueTask Refresh(bool purge = true)
-        => executor.Execute(async () =>
+    public async ValueTask Refresh(bool purge = true)
+        => await executor.Execute(async () =>
         {
             Failable<IEnumerable<IFolder>> tryDescend = await folder.DescendAllFolders().Consolidate();
             if (tryDescend.Exception != null)
             {
-                Error(tryDescend.Exception.AsFailable("Failed to refresh modules"));
+                this.LogError(tryDescend.Exception.AsFailable("Failed to refresh modules"));
                 return;
             }
 
@@ -68,7 +68,7 @@ public class PluginRepository(IFolder folder, IEnumerable<Type> sharedTypes) : C
                     Failable<IModule> tryRead = await ModuleReader.Read(subFolder.Name, subFolder, sharedTypes);
                     if (tryRead.Exception != null)
                     {
-                        Error(tryRead.Exception.AsFailable($"Failed to read module at {subFolder.FullName}"));
+                        this.LogError(tryRead.Exception.AsFailable($"Failed to read module at {subFolder.FullName}"));
                     }
 
                     modules.Add(subFolder.Name, tryRead.Result);

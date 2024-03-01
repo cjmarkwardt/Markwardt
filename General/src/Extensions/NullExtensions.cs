@@ -24,6 +24,14 @@ public static class NullExtensions
         return target != null;
     }
 
+    public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> items)
+        where T : class
+        => items.Where(x => x != null).Select(x => x!);
+
+    public static IEnumerable<T> WhereValueNotNull<T>(this IEnumerable<T?> items)
+        where T : struct
+        => items.Where(x => x.HasValue).Select(x => x!.Value);
+
     public static bool IsNullable(this PropertyInfo property) =>
         IsNullableHelper(property.PropertyType, property.DeclaringType, property.CustomAttributes);
 

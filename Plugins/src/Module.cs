@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IModule : IComponent, IEnumerable<IPlugin>
+public interface IModule : IComplexDisposable, IEnumerable<IPlugin>
 {
     [Factory<Module>]
     delegate ValueTask<IModule> Factory(string id, string name, string author, string description, IDynamicAssembly assembly);
@@ -25,7 +25,7 @@ public static class ModuleExtensions
         => module.GetPlugin(id).Map(x => (T)x);
 }
 
-public class Module : Component, IModule
+public class Module : ComplexDisposable, IModule
 {
     public Module(string id, string name, string author, string description, IDynamicAssembly assembly)
     {
@@ -48,7 +48,7 @@ public class Module : Component, IModule
 
     public bool Load()
     {
-        Verify();
+        this.Verify();
 
         if (assembly.Load())
         {
@@ -61,7 +61,7 @@ public class Module : Component, IModule
 
     public void Reload()
     {
-        Verify();
+        this.Verify();
         assembly.Reload();
         RefreshPlugins();
     }
