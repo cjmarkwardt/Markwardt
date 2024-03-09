@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface ICache<TKey, TValue> : ICollection<TValue>
+public interface IDataCache<TKey, TValue> : ICollection<TValue>
 {
     TValue this[TKey key] { get; }
 
@@ -10,9 +10,9 @@ public interface ICache<TKey, TValue> : ICollection<TValue>
     bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value);
 }
 
-public static class CacheExtensions
+public static class DataCacheExtensions
 {
-    public static TValue PopKey<TKey, TValue>(this ICache<TKey, TValue> cache, TKey key)
+    public static TValue PopKey<TKey, TValue>(this IDataCache<TKey, TValue> cache, TKey key)
     {
         TValue value = cache[key];
         cache.RemoveKey(key);
@@ -20,7 +20,7 @@ public static class CacheExtensions
     }
 }
 
-public class Cache<TKey, TValue>(Func<TValue, TKey> getKey) : ICache<TKey, TValue>
+public class DataCache<TKey, TValue>(Func<TValue, TKey> getKey) : IDataCache<TKey, TValue>
     where TKey : notnull
 {
     private readonly Dictionary<TKey, TValue> values = [];

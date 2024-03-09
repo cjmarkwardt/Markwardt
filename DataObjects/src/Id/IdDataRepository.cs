@@ -20,7 +20,7 @@ public class IdDataRepository : ComplexDisposable, IIdDataRepository, IIdDataNot
     private readonly SequentialExecutor executor = new();
     private readonly TypeNamer typeNamer = new();
     private readonly IdGenerator idGenerator = new();
-    private readonly Cache<string, IdDataModel> entities = new(x => x.Id);
+    private readonly DataCache<string, IdDataModel> entities = new(x => x.Id);
     private readonly HashSet<string> expiredEntities = [];
 
     private HashSet<string> deletedEntities = [];
