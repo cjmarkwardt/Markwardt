@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IComplexDisposable : IChainableDisposable, ITrackableDisposable, IExceptionContext, ILogger, INotifyPropertyChanged
+public interface IComplexDisposable : IChainableDisposable, ITrackableDisposable, IFailureContext, ILogger, INotifyPropertyChanged
 {
     IComplexDisposable? DisposalParent { get; set; }
 }
@@ -15,17 +15,10 @@ public static class ComplexDisposableExtensions
 
         TaskExtensions.Fork(async () =>
         {
-            try
+            Failable tryAction = await Failable.GuardAsync(async () => await action(cancellation.Token));
+            if (tryAction.Exception is not null)
             {
-                Failable tryAction = await action(cancellation.Token);
-                if (tryAction.Exception is not null)
-                {
-                    disposable.PushException(tryAction.Exception);
-                }
-            }
-            catch (Exception exception)
-            {
-                disposable.PushException(exception);
+                disposable.Fail(tryAction.Exception);
             }
 
             cancellation.Dispose();
@@ -98,8 +91,8 @@ public class ComplexDisposable : ReactiveObject, IComplexDisposable
     private readonly Subject<LogMessage> logReported = new();
     public IObservable<LogMessage> LogReported => logReported;
 
-    private readonly Subject<Exception> exceptionPushed = new();
-    public IObservable<Exception> ExceptionPushed => exceptionPushed;
+    private readonly Subject<Failable> failReported = new();
+    public IObservable<Failable> FailReported => failReported;
 
     private IComplexDisposable? disposalParent;
     public IComplexDisposable? DisposalParent
@@ -123,10 +116,13 @@ public class ComplexDisposable : ReactiveObject, IComplexDisposable
     public virtual void Log(LogMessage report)
         => PushLogReported(report);
 
-    public void PushException(Exception exception)
+    public void Fail(Failable failable)
     {
-        exceptionPushed.OnNext(exception);
-        this.LogError(exception);
+        if (failable.Exception is not null)
+        {
+            failReported.OnNext(failable);
+            this.LogError(failable);
+        }
     }
 
     public void ChainDisposables(params object?[] disposables)
@@ -165,7 +161,7 @@ public class ComplexDisposable : ReactiveObject, IComplexDisposable
             OnSharedDisposal();
             OnDisposal();
 
-            exceptionPushed.Dispose();
+            failReported.Dispose();
             logReported.Dispose();
         }
     }
@@ -189,7 +185,7 @@ public class ComplexDisposable : ReactiveObject, IComplexDisposable
             OnSharedDisposal();
             await OnAsyncDisposal();
 
-            exceptionPushed.Dispose();
+            failReported.Dispose();
             logReported.Dispose();
         }
     }
