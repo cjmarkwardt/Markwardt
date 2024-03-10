@@ -1,23 +1,83 @@
 namespace Markwardt;
 
-public interface IRefreshable
-{
-    IObservable Refreshed { get; }
-}
-
-public interface IComplexDisposable : IChainableDisposable, ITrackableDisposable, ILogger, INotifyPropertyChanged, IRefreshable
+public interface IComplexDisposable : IChainableDisposable, ITrackableDisposable, IExceptionContext, ILogger, INotifyPropertyChanged
 {
     IComplexDisposable? DisposalParent { get; set; }
+}
+
+public static class ComplexDisposableExtensions
+{
+    public static IDisposable RunInBackground(this IComplexDisposable disposable, AsyncAction action)
+    {
+        disposable.Verify();
+
+        CancellationTokenSource cancellation = CancellationTokenSource.CreateLinkedTokenSource(disposable.DisposalToken);
+
+        TaskExtensions.Fork(async () =>
+        {
+            try
+            {
+                Failable tryAction = await action(cancellation.Token);
+                if (tryAction.Exception is not null)
+                {
+                    disposable.PushException(tryAction.Exception);
+                }
+            }
+            catch (Exception exception)
+            {
+                disposable.PushException(exception);
+            }
+
+            cancellation.Dispose();
+        });
+
+        return Disposable.Create(cancellation.Cancel);
+    }
+
+    public static void DisposeInBackground(this IComplexDisposable disposable, object? target)
+        => disposable.RunInBackground(async _ =>
+        {
+            if (target is IAsyncDisposable targetAsyncDisposable)
+            {
+                await targetAsyncDisposable.DisposeAsync();
+            }
+            else if (target is IDisposable targetDisposable)
+            {
+                targetDisposable.Dispose();
+            }
+
+            return Failable.Success();
+        });
+
+    public static IDisposable LoopInBackground(this IComplexDisposable disposable, TimeSpan? interval, AsyncAction<StopLoopAction> action)
+        => disposable.RunInBackground(async cancellation =>
+        {
+            CancellationTokenSource loopCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+            while (!loopCancellation.IsCancellationRequested)
+            {
+                Failable tryAction = await action(() => loopCancellation.Cancel(), loopCancellation.Token);
+                if (tryAction.Exception is not null)
+                {
+                    return tryAction;
+                }
+
+                if (interval is not null)
+                {
+                    await TaskExtensions.TryDelay(interval.Value, loopCancellation.Token);
+                }
+            }
+
+            loopCancellation.Dispose();
+            return Failable.Success();
+        });
+
+    public static IDisposable LoopInBackground(this IComplexDisposable disposable, AsyncAction<StopLoopAction> action)
+        => disposable.LoopInBackground(null, action);
 }
 
 [SuppressMessage("Sonar Code Quality", "S3881")]
 public class ComplexDisposable : ReactiveObject, IComplexDisposable
 {
-    public ComplexDisposable()
-    {
-        PropertyChanged += (_, _) => PushRefresh();
-    }
-
     private readonly CancellationTokenSource disposalTokenSource = new();
     private readonly HashSet<object> chainedDisposables = [];
 
@@ -35,11 +95,11 @@ public class ComplexDisposable : ReactiveObject, IComplexDisposable
     public virtual string LoggerName => GetType().Name;
     public virtual string DisposalName => LoggerName;
 
-    private readonly Subject refreshed = new();
-    public IObservable Refreshed => refreshed;
-
     private readonly Subject<LogMessage> logReported = new();
     public IObservable<LogMessage> LogReported => logReported;
+
+    private readonly Subject<Exception> exceptionPushed = new();
+    public IObservable<Exception> ExceptionPushed => exceptionPushed;
 
     private IComplexDisposable? disposalParent;
     public IComplexDisposable? DisposalParent
@@ -62,6 +122,12 @@ public class ComplexDisposable : ReactiveObject, IComplexDisposable
 
     public virtual void Log(LogMessage report)
         => PushLogReported(report);
+
+    public void PushException(Exception exception)
+    {
+        exceptionPushed.OnNext(exception);
+        this.LogError(exception);
+    }
 
     public void ChainDisposables(params object?[] disposables)
     {
@@ -99,7 +165,7 @@ public class ComplexDisposable : ReactiveObject, IComplexDisposable
             OnSharedDisposal();
             OnDisposal();
 
-            refreshed.Dispose();
+            exceptionPushed.Dispose();
             logReported.Dispose();
         }
     }
@@ -123,7 +189,7 @@ public class ComplexDisposable : ReactiveObject, IComplexDisposable
             OnSharedDisposal();
             await OnAsyncDisposal();
 
-            refreshed.Dispose();
+            exceptionPushed.Dispose();
             logReported.Dispose();
         }
     }
@@ -132,9 +198,6 @@ public class ComplexDisposable : ReactiveObject, IComplexDisposable
     protected virtual void OnSharedDisposal() { }
     protected virtual void OnDisposal() { }
     protected virtual ValueTask OnAsyncDisposal() => ValueTask.CompletedTask;
-
-    protected void PushRefresh()
-        => refreshed.OnNext();
 
     protected void PushLogReported(LogMessage report)
         => logReported.OnNext(report);

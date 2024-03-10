@@ -10,5 +10,6 @@ global using System.ComponentModel;
 global using System.Text;
 global using System.Numerics;
 global using System.Reactive.Linq;
+global using System.Reactive.Disposables;
 
 global using ReactiveUI;
