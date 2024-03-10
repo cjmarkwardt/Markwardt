@@ -9,14 +9,26 @@ public interface IObservableList<T> : IObservableReadOnlyList<T>, IManyList<T>
 public class ObservableList<T> : ObservableReadOnlyList<T>, IObservableList<T>, IList
     where T : notnull
 {
-    public ObservableList(IEnumerable<T>? items = null)
+    public ObservableList(ItemDisposal itemDisposal, IEnumerable<T>? items = null)
         : base(new SourceList<T>())
     {
+        this.itemDisposal = itemDisposal;
+
+        if (itemDisposal is ItemDisposal.OnRemoval || itemDisposal is ItemDisposal.Full)
+        {
+            ObserveItems().AsRemoves().Subscribe(x => this.DisposeInBackground(x)).DisposeWith(this);
+        }
+
         if (items is not null)
         {
             Add(items);
         }
     }
+
+    public ObservableList(IEnumerable<T>? items = null)
+        : this(ItemDisposal.None, items) { }
+
+    private readonly ItemDisposal itemDisposal;
 
     protected new ISourceList<T> Source => (ISourceList<T>)base.Source;
 
@@ -88,4 +100,14 @@ public class ObservableList<T> : ObservableReadOnlyList<T>, IObservableList<T>, 
 
     void IList.Remove(object? value)
         => Remove((T)value!);
+
+    protected override void PrepareDisposal()
+    {
+        base.PrepareDisposal();
+
+        if (itemDisposal is ItemDisposal.OnDisposal || itemDisposal is ItemDisposal.Full)
+        {
+            this.ForEach(x => x.DisposeWith(this));
+        }
+    }
 }

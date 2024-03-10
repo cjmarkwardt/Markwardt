@@ -8,11 +8,15 @@ public class ObservableMap<TKey, T> : ObservableList<IPair<TKey, T>>, IObservabl
     where TKey : notnull
     where T : notnull
 {
-    public ObservableMap(IEnumerable<IPair<TKey, T>>? items = null)
-        : base(items)
+    public ObservableMap(ItemDisposal itemDisposal, IEnumerable<IPair<TKey, T>>? items = null)
+        : base(itemDisposal, items)
     {
-        SubscribeDictionary();
+        ObserveItems().AsAdds().Subscribe(x => Dictionary.Add(x.Key, x.Value)).DisposeWith(this);
+        ObserveItems().AsRemoves().Subscribe(x => Dictionary.Remove(x.Key)).DisposeWith(this);
     }
+
+    public ObservableMap(IEnumerable<IPair<TKey, T>>? items = null)
+        : this(ItemDisposal.None, items) { }
 
     protected IDictionary<TKey, T> Dictionary { get; } = new Dictionary<TKey, T>();
 
@@ -24,11 +28,4 @@ public class ObservableMap<TKey, T> : ObservableList<IPair<TKey, T>>, IObservabl
 
     public new IPairCollectionStream<TKey, T> ObserveItems()
         => new PairCollectionStream<TKey, T>(Source.Connect());
-
-    private void SubscribeDictionary()
-    {
-        ObserveItems().AsAdds().Subscribe(x => Dictionary.Add(x.Key, x.Value)).DisposeWith(this);
-        ObserveItems().AsRemoves().Subscribe(x => Dictionary.Remove(x.Key)).DisposeWith(this);
-        ObserveItems().AsClears().Subscribe(Dictionary.Clear).DisposeWith(this);
-    }
 }

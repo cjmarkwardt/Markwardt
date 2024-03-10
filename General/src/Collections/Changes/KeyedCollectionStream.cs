@@ -42,5 +42,5 @@ public class KeyedCollectionStream<TKey, T>(IObservable<IChangeSet<T>> source, F
         => new CollectionStream<T>(Source);
 
     public IObservableReadOnlyCache<TKey, T> ToCache()
-        => new ObservableReadOnlyCache<TKey, T>(Source, getKey);
+        => new ObservableReadOnlyCache<TKey, T>(Source.AsObservableList(), getKey);
 }

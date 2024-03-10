@@ -11,10 +11,6 @@ public static class ObservableItemsStreamExtensions
     public static IObservable<T> AsRemoves<T>(this IObservable<ICollectionChange<T>> source)
         where T : notnull
         => source.Where(x => x.ChangeType is CollectionChangeType.Remove).SelectMany(x => x.Items);
-        
-    public static IObservable AsClears<T>(this IObservable<ICollectionChange<T>> source)
-        where T : notnull
-        => source.Where(x => x.ChangeType is CollectionChangeType.Clear).Generalize();
 }
 
 public abstract class ObservableItemsStream<T>(IObservable<IChangeSet<T>> source) : IObservable<ICollectionChange<T>>
@@ -51,7 +47,7 @@ public abstract class ObservableItemsStream<T>(IObservable<IChangeSet<T>> source
                 }
                 else if (item.Reason is ListChangeReason.Clear)
                 {
-                    changes.Add(CollectionChange.Clear<T>());
+                    changes.Add(CollectionChange.Remove(item.Range));
                 }
             }
 

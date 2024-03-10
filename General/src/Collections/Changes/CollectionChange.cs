@@ -21,10 +21,6 @@ public static class CollectionChange
     public static ICollectionChange<T> Remove<T>(IEnumerable<T> items)
         where T : notnull
         => new CollectionChange<T>(CollectionChangeType.Remove, items);
-
-    public static ICollectionChange<T> Clear<T>()
-        where T : notnull
-        => new CollectionChange<T>(CollectionChangeType.Clear, []);
 }
 
 public record CollectionChange<T>(CollectionChangeType ChangeType, IEnumerable<T> Items) : ICollectionChange<T>

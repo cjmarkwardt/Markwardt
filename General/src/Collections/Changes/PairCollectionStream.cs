@@ -19,5 +19,5 @@ public class PairCollectionStream<TKey, T>(IObservable<IChangeSet<IPair<TKey, T>
         => new CollectionStream<T>(Source.Transform(x => x.Value));
 
     public IObservableReadOnlyMap<TKey, T> ToMap()
-        => new ObservableReadOnlyMap<TKey, T>(Source);
+        => new ObservableReadOnlyMap<TKey, T>(Source.AsObservableList());
 }

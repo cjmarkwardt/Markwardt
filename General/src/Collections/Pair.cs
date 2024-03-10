@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IPair<out TKey, out T>
+public interface IPair<out TKey, out T> : IMultiDisposable
 {
     TKey Key { get; }
     T Value { get; }
@@ -12,4 +12,14 @@ public static class PairExtensions
         => new Pair<TKey, T>(key, obj);
 }
 
-public record struct Pair<TKey, T>(TKey Key, T Value) : IPair<TKey, T>;
+public readonly record struct Pair<TKey, T>(TKey Key, T Value) : IPair<TKey, T>
+{
+    public readonly void Dispose()
+    {
+        Key.TryDispose();
+        Value.TryDispose();
+    }
+
+    public readonly async ValueTask DisposeAsync()
+        => await Task.WhenAll(Key.TryDisposeAsync().AsTask(), Value.TryDisposeAsync().AsTask());
+}

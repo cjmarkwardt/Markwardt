@@ -73,5 +73,5 @@ public class CollectionStream<T>(IObservable<IChangeSet<T>> source) : Observable
         => ToList();
 
     public IObservableReadOnlyList<T> ToList()
-        => new ObservableReadOnlyList<T>(Source);
+        => new ObservableReadOnlyList<T>(Source.AsObservableList());
 }

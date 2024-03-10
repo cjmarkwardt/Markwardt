@@ -17,14 +17,9 @@ public class ObservableReadOnlyCache<TKey, T> : ObservableReadOnlyList<T>, IObse
         : base(source)
     {
         KeySelector = keySelector;
-        SubscribeDictionary();
-    }
-
-    public ObservableReadOnlyCache(IObservable<IChangeSet<T>> source, Func<T, TKey> keySelector)
-        : base(source)
-    {
-        KeySelector = keySelector;
-        SubscribeDictionary();
+        
+        ObserveItems().AsAdds().Subscribe(x => Dictionary.Add(KeySelector(x), x)).DisposeWith(this);
+        ObserveItems().AsRemoves().Subscribe(x => Dictionary.Remove(KeySelector(x))).DisposeWith(this);
     }
 
     protected Func<T, TKey> KeySelector { get; }
@@ -35,11 +30,4 @@ public class ObservableReadOnlyCache<TKey, T> : ObservableReadOnlyList<T>, IObse
 
     public new IKeyedCollectionStream<TKey, T> ObserveItems()
         => new KeyedCollectionStream<TKey, T>(Source.Connect(), KeySelector);
-
-    private void SubscribeDictionary()
-    {
-        ObserveItems().AsAdds().Subscribe(x => Dictionary.Add(KeySelector(x), x)).DisposeWith(this);
-        ObserveItems().AsRemoves().Subscribe(x => Dictionary.Remove(KeySelector(x))).DisposeWith(this);
-        ObserveItems().AsClears().Subscribe(Dictionary.Clear).DisposeWith(this);
-    }
 }

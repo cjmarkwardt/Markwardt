@@ -9,12 +9,17 @@ public class ObservableCache<TKey, T> : ObservableList<T>, IObservableCache<TKey
     where T : notnull
 {
     [SuppressMessage("Sonar Code Quality", "S3427")]
-    public ObservableCache(Func<T, TKey> keySelector, IEnumerable<T>? items = null)
-        : base(items)
+    public ObservableCache(Func<T, TKey> keySelector, ItemDisposal itemDisposal, IEnumerable<T>? items = null)
+        : base(itemDisposal, items)
     {
         KeySelector = keySelector;
-        SubscribeDictionary();
+
+        ObserveItems().AsAdds().Subscribe(x => Dictionary.Add(KeySelector(x), x)).DisposeWith(this);
+        ObserveItems().AsRemoves().Subscribe(x => Dictionary.Remove(KeySelector(x))).DisposeWith(this);
     }
+
+    public ObservableCache(Func<T, TKey> keySelector, IEnumerable<T>? items = null)
+        : this(keySelector, ItemDisposal.None, items) { }
 
     protected Func<T, TKey> KeySelector { get; }
     protected IDictionary<TKey, T> Dictionary { get; } = new Dictionary<TKey, T>();
@@ -27,11 +32,4 @@ public class ObservableCache<TKey, T> : ObservableList<T>, IObservableCache<TKey
 
     public new IKeyedCollectionStream<TKey, T> ObserveItems()
         => new KeyedCollectionStream<TKey, T>(Source.Connect(), KeySelector);
-
-    private void SubscribeDictionary()
-    {
-        ObserveItems().AsAdds().Subscribe(x => Dictionary.Add(KeySelector(x), x)).DisposeWith(this);
-        ObserveItems().AsRemoves().Subscribe(x => Dictionary.Remove(KeySelector(x))).DisposeWith(this);
-        ObserveItems().AsClears().Subscribe(Dictionary.Clear).DisposeWith(this);
-    }
 }

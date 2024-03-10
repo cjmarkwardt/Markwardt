@@ -15,9 +15,6 @@ public class ObservableReadOnlyList<T> : ComplexDisposable, IObservableReadOnlyL
         Source.Connect().ToNotifier().DisposeWith(this).CollectionChanged += (sender, arguments) => CollectionChanged?.Invoke(sender, arguments);
     }
 
-    public ObservableReadOnlyList(IObservable<IChangeSet<T>> source)
-        : this(source.AsObservableList()) { }
-
     protected DynamicData.IObservableList<T> Source { get; }
 
     public T this[int index] => Source.Items.ElementAt(index);

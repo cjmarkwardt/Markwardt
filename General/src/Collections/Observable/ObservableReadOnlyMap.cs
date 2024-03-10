@@ -16,13 +16,8 @@ public class ObservableReadOnlyMap<TKey, T> : ObservableReadOnlyList<IPair<TKey,
     public ObservableReadOnlyMap(DynamicData.IObservableList<IPair<TKey, T>> source)
         : base(source)
     {
-        SubscribeDictionary();
-    }
-
-    public ObservableReadOnlyMap(IObservable<IChangeSet<IPair<TKey, T>>> source)
-        : base(source)
-    {
-        SubscribeDictionary();
+        ObserveItems().AsAdds().Subscribe(x => Dictionary.Add(x.Key, x.Value)).DisposeWith(this);
+        ObserveItems().AsRemoves().Subscribe(x => Dictionary.Remove(x.Key)).DisposeWith(this);
     }
 
     protected IDictionary<TKey, T> Dictionary { get; } = new Dictionary<TKey, T>();
@@ -32,11 +27,4 @@ public class ObservableReadOnlyMap<TKey, T> : ObservableReadOnlyList<IPair<TKey,
 
     public new IPairCollectionStream<TKey, T> ObserveItems()
         => new PairCollectionStream<TKey, T>(Source.Connect());
-
-    private void SubscribeDictionary()
-    {
-        ObserveItems().AsAdds().Subscribe(x => Dictionary.Add(x.Key, x.Value)).DisposeWith(this);
-        ObserveItems().AsRemoves().Subscribe(x => Dictionary.Remove(x.Key)).DisposeWith(this);
-        ObserveItems().AsClears().Subscribe(Dictionary.Clear).DisposeWith(this);
-    }
 }
