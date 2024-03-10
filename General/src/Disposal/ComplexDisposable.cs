@@ -16,11 +16,7 @@ public static class ComplexDisposableExtensions
         TaskExtensions.Fork(async () =>
         {
             Failable tryAction = await Failable.GuardAsync(async () => await action(cancellation.Token));
-            if (tryAction.Exception is not null)
-            {
-                disposable.Fail(tryAction.Exception);
-            }
-
+            disposable.Fail(tryAction);
             cancellation.Dispose();
         });
 
