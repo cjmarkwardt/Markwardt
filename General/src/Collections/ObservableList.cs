@@ -1,5 +1,3 @@
-using DynamicData;
-
 namespace Markwardt;
 
 public interface IObservableList<T> : IObservableReadOnlyList<T>, IManyList<T>
@@ -16,7 +14,7 @@ public class ObservableList<T> : ObservableReadOnlyList<T>, IObservableList<T>, 
 
         if (itemDisposal is ItemDisposal.OnRemoval || itemDisposal is ItemDisposal.Full)
         {
-            ObserveItems().AsRemoves().Subscribe(x => this.DisposeInBackground(x)).DisposeWith(this);
+            Observe().AsRemoves().Subscribe(x => this.DisposeInBackground(x)).DisposeWith(this);
         }
 
         if (items is not null)

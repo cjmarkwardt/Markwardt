@@ -1,8 +1,6 @@
-using DynamicData;
-
 namespace Markwardt;
 
-public interface IObservableReadOnlyList<out T> : IObservableReadOnlyCollection<T>, IReadOnlyList<T>
+public interface IObservableReadOnlyList<T> : IObservableReadOnlyCollection<T>, IReadOnlyList<T>
     where T : notnull;
 
 public class ObservableReadOnlyList<T> : ComplexDisposable, IObservableReadOnlyList<T>, IList
@@ -39,8 +37,8 @@ public class ObservableReadOnlyList<T> : ComplexDisposable, IObservableReadOnlyL
     [SuppressMessage("Sonar Code Quality", "S3264")]
     public event NotifyCollectionChangedEventHandler? CollectionChanged;
 
-    public ICollectionStream<T> ObserveItems()
-        => new CollectionStream<T>(Source.Connect());
+    public IObservable<IChangeSet<T>> Observe()
+        => Source.Connect();
 
     public IEnumerator<T> GetEnumerator()
         => Source.Items.GetEnumerator();

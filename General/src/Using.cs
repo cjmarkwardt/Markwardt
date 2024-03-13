@@ -13,3 +13,5 @@ global using System.Reactive.Linq;
 global using System.Reactive.Disposables;
 
 global using ReactiveUI;
+
+global using DynamicData;

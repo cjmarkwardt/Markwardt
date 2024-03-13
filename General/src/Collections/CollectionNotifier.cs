@@ -1,5 +1,3 @@
-using DynamicData;
-
 namespace Markwardt;
 
 public interface ICollectionNotifier : IComplexDisposable, INotifyCollectionChanged;
