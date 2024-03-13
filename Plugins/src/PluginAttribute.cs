@@ -1,4 +1,4 @@
 namespace Markwardt;
 
-[AttributeUsage(AttributeTargets.Class)]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface | AttributeTargets.Delegate)]
 public class PluginAttribute : Attribute;

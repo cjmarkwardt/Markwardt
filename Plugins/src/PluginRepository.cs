@@ -1,108 +1,40 @@
 namespace Markwardt;
 
-public interface IPluginRepository : IComplexDisposable, IEnumerable<IPlugin>
+public interface IPluginRepository : IComplexDisposable
 {
-    [Factory<PluginRepository>]
-    delegate ValueTask<IPluginRepository> Factory(IFolder folder, IEnumerable<Type> sharedTypes);
-
-    IEnumerable<IModule> Modules { get; }
+    IObservableReadOnlyCache<string, IPluginModule> Modules { get; }
 
     ValueTask Refresh(bool purge = true);
-
-    IMaybe<IModule> GetModule(string id);
-    IMaybe<IPlugin> GetPlugin(string moduleId, string id);
 }
 
 public static class PluginRepositoryExtensions
 {
-    public static void LoadAll(this IPluginRepository plugins)
-    {
-        foreach (IModule module in plugins.Modules)
-        {
-            module.Load();
-        }
-    }
+    public static async ValueTask LoadAll(this IPluginRepository plugins)
+        => await Task.WhenAll(plugins.Modules.Select(async x => await x.Load()));
 
-    public static void ReloadAll(this IPluginRepository plugins)
-    {
-        foreach (IModule module in plugins.Modules.Where(x => x.IsLoaded))
-        {
-            module.Reload();
-        }
-    }
+    public static async ValueTask ReloadAll(this IPluginRepository plugins)
+        => await Task.WhenAll(plugins.Modules.Where(x => x.IsLoaded).Select(async x => await x.Reload()));
 
-    public static void UnloadAll(this IPluginRepository plugins)
-    {
-        foreach (IModule module in plugins.Modules)
-        {
-            module.Unload();
-        }
-    }
+    public static async ValueTask UnloadAll(this IPluginRepository plugins)
+        => await Task.WhenAll(plugins.Modules.Select(async x => await x.Unload()));
+
+    public static IMaybe<IPlugin> GetPlugin(this IPluginRepository plugins, string moduleId, string id)
+        => plugins.Modules.GetValue(moduleId).Select(x => x.Plugins.GetValue(id));
 }
 
-public class PluginRepository(IFolder folder, IEnumerable<Type> sharedTypes) : ComplexDisposable, IPluginRepository
+public class PluginRepository : ComplexDisposable, IPluginRepository
 {
-    private readonly SequentialExecutor executor = new();
-    private readonly Dictionary<string, IModule> modules = [];
+    public PluginRepository([Inject<PluginSourcesTag>] IObservableReadOnlyCollection<IPluginSource> sources)
+    {
+        this.sources = sources;
 
-    public required IModuleReader ModuleReader { get; init; }
+        Modules = sources.Observe().TransformMany(x => x.Modules).ToCache(x => x.Id).DisposeWith(this);
+    }
 
-    public IEnumerable<IModule> Modules => modules.Values;
+    private readonly IObservableReadOnlyCollection<IPluginSource> sources;
+
+    public IObservableReadOnlyCache<string, IPluginModule> Modules { get; }
 
     public async ValueTask Refresh(bool purge = true)
-        => await executor.Execute(async () =>
-        {
-            Failable<IEnumerable<IFolder>> tryDescend = await folder.DescendAllFolders().Consolidate();
-            if (tryDescend.Exception != null)
-            {
-                this.LogError(tryDescend.Exception.AsFailable("Failed to refresh modules"));
-                return;
-            }
-
-            IEnumerable<IFolder> subFolders = tryDescend.Result;
-
-            foreach (IFolder subFolder in subFolders)
-            {
-                if (!modules.ContainsKey(subFolder.Name))
-                {
-                    Failable<IModule> tryRead = await ModuleReader.Read(subFolder.Name, subFolder, sharedTypes);
-                    if (tryRead.Exception != null)
-                    {
-                        this.LogError(tryRead.Exception.AsFailable($"Failed to read module at {subFolder.FullName}"));
-                    }
-
-                    modules.Add(subFolder.Name, tryRead.Result);
-                }
-            }
-
-            if (purge)
-            {
-                IEnumerable<string> existingModules = subFolders.Select(x => x.Name).ToHashSet();
-                
-                foreach (IModule purgedModule in modules.Values.Where(x => !existingModules.Contains(x.Id)))
-                {
-                    modules.Remove(purgedModule.Id);
-                    await purgedModule.DisposeAsync();
-                }
-            }
-        });
-
-    public IMaybe<IModule> GetModule(string id)
-        => modules.TryGetValue(id, out IModule? module) ? module.AsMaybe() : Maybe<IModule>.Empty();
-
-    public IMaybe<IPlugin> GetPlugin(string moduleId, string id)
-        => GetModule(moduleId).TryGetValue(out IModule module) ? module.GetPlugin(id) : Maybe<IPlugin>.Empty();
-
-    public IEnumerator<IPlugin> GetEnumerator()
-        => modules.Values.SelectMany(x => x).GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator()
-        => GetEnumerator();
-
-    protected override void PrepareDisposal()
-    {
-        base.PrepareDisposal();
-
-        executor.DisposeWith(this);
-    }
+        => await Task.WhenAll(sources.Select(x => x.Refresh(purge).AsTask()));
 }

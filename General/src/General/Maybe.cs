@@ -8,6 +8,9 @@ public interface IMaybe<out T> : IMultiDisposable
     IMaybe<TSelected> Select<TSelected>(Func<T, TSelected> select)
         => this.Select<T, TSelected>(select);
 
+    IMaybe<TSelected> Select<TSelected>(Func<T, IMaybe<TSelected>> select)
+        => this.Select<T, TSelected>(select);
+
     IMaybe<TCasted> Cast<TCasted>()
         => this.Cast<T, TCasted>();
 
@@ -36,6 +39,9 @@ public static class MaybeExtensions
 
     public static IMaybe<TSelected> Select<T, TSelected>(this IMaybe<T> maybe, Func<T, TSelected> select)
         => maybe.TryGetValue(out T value) ? select(value).AsMaybe() : Maybe<TSelected>.Empty();
+
+    public static IMaybe<TSelected> Select<T, TSelected>(this IMaybe<T> maybe, Func<T, IMaybe<TSelected>> select)
+        => maybe.TryGetValue(out T value) ? select(value) : Maybe<TSelected>.Empty();
 
     public static IMaybe<T> Where<T>(this IMaybe<T> maybe, Func<T, bool> where)
         => maybe.TryGetValue(out T value) && where(value) ? maybe : Maybe<T>.Empty();

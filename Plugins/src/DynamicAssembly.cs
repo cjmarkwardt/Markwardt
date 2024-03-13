@@ -8,48 +8,57 @@ public interface IDynamicAssembly : IComplexDisposable
     Assembly Value { get; }
     bool IsLoaded { get; }
 
-    bool Load();
-    void Reload();
-    bool Unload();
+    ValueTask<bool> Load();
+    ValueTask Reload();
+    ValueTask<bool> Unload();
 }
 
 public class DynamicAssembly(IFile file, IEnumerable<Type> sharedTypes) : ComplexDisposable, IDynamicAssembly
 {
     private readonly Type[] sharedTypes = sharedTypes.ToArray();
+    private readonly SequentialExecutor executor = new();
 
     private PluginLoader? loader;
 
     private Assembly? value;
-    public Assembly Value
-    {
-        get
-        {
-            Load();
-            return value;
-        }
-    }
+    public Assembly Value => value ?? throw new InvalidOperationException("Not loaded");
 
     public bool IsLoaded => value != null;
 
-    [MemberNotNull(nameof(value))]
-    public bool Load()
-    {
-        this.Verify();
-
-        if (value == null)
+    public async ValueTask<bool> Load()
+        => await executor.Execute(() =>
         {
-            Reload();
-            return true;
-        }
+            if (value == null)
+            {
+                ReloadAssembly();
+                return true;
+            }
 
-        return false;
+            return false;
+        });
+
+    public async ValueTask Reload()
+        => await executor.Execute(ReloadAssembly);
+
+    public async ValueTask<bool> Unload()
+        => await executor.Execute(UnloadAssembly);
+
+    protected override void PrepareDisposal()
+    {
+        base.PrepareDisposal();
+
+        executor.DisposeWith(this);
     }
 
-    [MemberNotNull(nameof(value))]
-    public void Reload()
+    protected override void OnSharedDisposal()
     {
-        this.Verify();
+        base.OnSharedDisposal();
 
+        UnloadAssembly();
+    }
+
+    private void ReloadAssembly()
+    {
         value = null;
 
         if (loader == null)
@@ -64,7 +73,7 @@ public class DynamicAssembly(IFile file, IEnumerable<Type> sharedTypes) : Comple
         value = loader.LoadDefaultAssembly();
     }
 
-    public bool Unload()
+    public bool UnloadAssembly()
     {
         if (loader != null)
         {
@@ -75,12 +84,5 @@ public class DynamicAssembly(IFile file, IEnumerable<Type> sharedTypes) : Comple
         }
 
         return false;
-    }
-
-    protected override void OnSharedDisposal()
-    {
-        base.OnSharedDisposal();
-
-        Unload();
     }
 }
