@@ -20,4 +20,7 @@ public static class EnumerableExtensions
 
     public static async ValueTask ForEachParallel<T>(this IEnumerable<T> items, Func<T, ValueTask> action)
         => await Task.WhenAll(items.Select(x => action(x).AsTask()).ToArray());
+
+    public static IEnumerable Cast(this IEnumerable items, Type type)
+        => (IEnumerable)Reflector.Reflect(Enumerable.Cast<object?>, type).Invoke(null, [items])!;
 }
