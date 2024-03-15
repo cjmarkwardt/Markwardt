@@ -25,16 +25,13 @@ public class ObservableCache<TKey, T> : ObservableList<T>, IObservableCache<TKey
     where T : notnull
 {
     [SuppressMessage("Sonar Code Quality", "S3427")]
-    public ObservableCache(Func<T, TKey> keySelector, ItemDisposal itemDisposal, IEnumerable<T>? items = null)
-        : base(itemDisposal, items)
+    public ObservableCache(Func<T, TKey> keySelector, IEnumerable<T>? items = null)
+        : base(items)
     {
         this.keySelector = keySelector;
 
         this.OutputToDictionary(dictionary, GetKey).DisposeWith(this);
     }
-
-    public ObservableCache(Func<T, TKey> keySelector, IEnumerable<T>? items = null)
-        : this(keySelector, ItemDisposal.None, items) { }
 
     private readonly Func<T, TKey> keySelector;
     private readonly Dictionary<TKey, T> dictionary = [];

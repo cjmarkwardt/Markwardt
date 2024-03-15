@@ -7,7 +7,7 @@ public class FolderPluginSource(IFolder folder, IEnumerable<Type> sharedTypes) :
 {
     private readonly SequentialExecutor executor = new();
 
-    private readonly ObservableCache<string, IPluginModule> modules = new(x => x.Id, ItemDisposal.Full);
+    private readonly ObservableCache<string, IPluginModule> modules = new(x => x.Id) { ItemDisposal = ItemDisposal.Full };
     public IObservableReadOnlyCache<string, IPluginModule> Modules => modules;
 
     public required IPluginModuleReader ModuleReader { get; init; }

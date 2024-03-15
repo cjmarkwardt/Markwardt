@@ -8,17 +8,14 @@ public class ObservableDictionary<TKey, T> : ObservableList<KeyValuePair<TKey, T
     where TKey : notnull
     where T : notnull
 {
-    public ObservableDictionary(ItemDisposal itemDisposal, IEnumerable<KeyValuePair<TKey, T>>? items = null)
-        : base(itemDisposal, items)
+    public ObservableDictionary(IEnumerable<KeyValuePair<TKey, T>>? items = null)
+        : base(items)
     {
         keys = new(Keys);
         values = new(Values);
 
         this.OutputToDictionary(dictionary, x => x.Key, x => x.Value).DisposeWith(this);
     }
-
-    public ObservableDictionary(IEnumerable<KeyValuePair<TKey, T>>? items = null)
-        : this(ItemDisposal.None, items) { }
 
     private readonly Dictionary<TKey, T> dictionary = [];
     private readonly ViewCollection<TKey> keys;

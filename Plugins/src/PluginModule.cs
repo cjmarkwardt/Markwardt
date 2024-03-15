@@ -30,7 +30,7 @@ public class PluginModule(string id, string name, string author, string descript
     public string Author { get; } = author;
     public string Description { get; } = description;
 
-    private readonly ObservableCache<string, IPlugin> plugins = new(x => x.Id, ItemDisposal.Full);
+    private readonly ObservableCache<string, IPlugin> plugins = new(x => x.Id) { ItemDisposal = ItemDisposal.Full };
     public IObservableReadOnlyCache<string, IPlugin> Plugins => plugins;
 
     public async ValueTask<bool> Load()

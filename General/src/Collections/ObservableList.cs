@@ -1,21 +1,42 @@
 namespace Markwardt;
 
 public interface IObservableList<T> : IObservableReadOnlyList<T>, IManyList<T>
-    where T : notnull;
+    where T : notnull
+{
+    ItemDisposal ItemDisposal { get; set; }
+}
+
+public static class ObservableListExtensions
+{
+    public static IDisposable Consume<T>(this IObservableList<T> list, Action<T> action)
+        where T : notnull
+    {
+        IDisposable subscription = list.Observe().AsAdds().Subscribe(x =>
+        {
+            list.Remove(x);
+            action(x);
+        });
+
+        IEnumerable<T> items = list.ToList();
+        list.Clear();
+        items.ForEach(action);
+
+        return subscription;
+    }
+
+    public static IDisposable Transport<T>(this IObservableList<T> list, IObservableList<T> destination)
+        where T : notnull
+        => list.Consume(destination.Add);
+}
 
 [SuppressMessage("Sonar Code Quality", "S3881")]
 public class ObservableList<T> : ObservableReadOnlyList<T>, IObservableList<T>, IList
     where T : notnull
 {
-    public ObservableList(ItemDisposal itemDisposal, IEnumerable<T>? items = null)
+    public ObservableList(IEnumerable<T>? items = null)
         : base(new SourceList<T>())
     {
-        this.itemDisposal = itemDisposal;
-
-        if (itemDisposal is ItemDisposal.OnRemoval || itemDisposal is ItemDisposal.Full)
-        {
-            Observe().AsRemoves().Subscribe(x => this.DisposeInBackground(x)).DisposeWith(this);
-        }
+        Observe().AsRemoves().Subscribe(OnRemove).DisposeWith(this);
 
         if (items is not null)
         {
@@ -23,10 +44,7 @@ public class ObservableList<T> : ObservableReadOnlyList<T>, IObservableList<T>, 
         }
     }
 
-    public ObservableList(IEnumerable<T>? items = null)
-        : this(ItemDisposal.None, items) { }
-
-    private readonly ItemDisposal itemDisposal;
+    public ItemDisposal ItemDisposal { get; set; } = ItemDisposal.None;
 
     protected new ISourceList<T> Source => (ISourceList<T>)base.Source;
 
@@ -103,9 +121,17 @@ public class ObservableList<T> : ObservableReadOnlyList<T>, IObservableList<T>, 
     {
         base.PrepareDisposal();
 
-        if (itemDisposal is ItemDisposal.OnDisposal || itemDisposal is ItemDisposal.Full)
+        if (ItemDisposal is ItemDisposal.OnDisposal || ItemDisposal is ItemDisposal.Full)
         {
             this.ForEach(x => x.DisposeWith(this));
+        }
+    }
+
+    private void OnRemove(T item)
+    {
+        if (ItemDisposal is ItemDisposal.OnRemoval || ItemDisposal is ItemDisposal.Full)
+        {
+            this.DisposeInBackground(item);
         }
     }
 }
