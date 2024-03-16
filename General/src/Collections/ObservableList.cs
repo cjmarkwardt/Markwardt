@@ -1,10 +1,7 @@
 namespace Markwardt;
 
 public interface IObservableList<T> : IObservableReadOnlyList<T>, IManyList<T>
-    where T : notnull
-{
-    ItemDisposal ItemDisposal { get; set; }
-}
+    where T : notnull;
 
 public static class ObservableListExtensions
 {
@@ -24,9 +21,13 @@ public static class ObservableListExtensions
         return subscription;
     }
 
-    public static IDisposable Transport<T>(this IObservableList<T> list, IObservableList<T> destination)
+    public static IDisposable Transport<T, TSelected>(this IObservableList<T> list, ICollection<TSelected> destination, Func<T, TSelected> selector)
         where T : notnull
-        => list.Consume(destination.Add);
+        => list.Consume(x => destination.Add(selector(x)));
+
+    public static IDisposable Transport<T>(this IObservableList<T> list, ICollection<T> destination)
+        where T : notnull
+        => list.Transport(destination, x => x);
 }
 
 [SuppressMessage("Sonar Code Quality", "S3881")]
@@ -45,6 +46,7 @@ public class ObservableList<T> : ObservableReadOnlyList<T>, IObservableList<T>, 
     }
 
     public ItemDisposal ItemDisposal { get; set; } = ItemDisposal.None;
+    public Func<T, bool> Filter { get; set; } = _ => true;
 
     protected new ISourceList<T> Source => (ISourceList<T>)base.Source;
 
