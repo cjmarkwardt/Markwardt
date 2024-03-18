@@ -17,6 +17,8 @@ public static class FileStreamSourceExtensions
 
 public class FileStreamSource(IFile file, FileOpenMode mode, bool readOnly) : IStreamSource
 {
+    public string? TypeHint => Path.GetExtension(file.Name);
+
     public async ValueTask<Failable<Stream>> Open(CancellationToken cancellation = default)
         => await file.Open(mode, readOnly, cancellation);
 }

@@ -2,6 +2,8 @@ namespace Markwardt;
 
 public interface IStreamSource
 {
+    string? TypeHint { get; }
+
     ValueTask<Failable<Stream>> Open(CancellationToken cancellation = default);
 }
 
@@ -41,36 +43,25 @@ public static class StreamSourceExtensions
     public static async ValueTask<Failable> Write(this IStreamSource source, ReadOnlyMemory<byte> data, CancellationToken cancellation = default)
         => await source.Operate(async (stream, _) => await Failable.GuardAsync(async () => await stream.WriteAsync(data, cancellation)), cancellation);
 
+    public static async ValueTask<Failable> Write<T>(this IStreamSource source, ISerializer<T> serializer, T data, CancellationToken cancellation = default)
+        => await source.Operate(async (stream, _) => await serializer.Serialize(data, stream, cancellation), cancellation);
+
     public static async ValueTask<Failable> WriteText(this IStreamSource source, string text, Encoding? encoding = null, CancellationToken cancellation = default)
         => await source.Write((encoding ?? Encoding.UTF8).GetBytes(text), cancellation);
 
-    public static async ValueTask<Failable<ReadOnlyMemory<byte>>> Read(this IStreamSource source, CancellationToken cancellation = default)
-        => await source.Operate(async (stream, cancellation) =>
-        {
-            using MemoryStream buffer = new();
-            Failable tryCopy = await Failable.GuardAsync(async () => await stream.CopyToAsync(buffer, cancellation));
-            if (tryCopy.Exception != null)
-            {
-                return tryCopy.Exception;
-            }
+    public static async ValueTask<Failable<byte[]>> Read(this IStreamSource source, CancellationToken cancellation = default)
+        => await source.Operate(async (stream, _) => await stream.CopyToArray(cancellation), cancellation);
 
-            return Failable.Success<ReadOnlyMemory<byte>>(buffer.ToArray());
-        }, cancellation);
+    public static async ValueTask<Failable<T>> Read<T>(this IStreamSource source, IDeserializer<T> deserializer, CancellationToken cancellation = default)
+        => await source.Operate(async (stream, _) => await deserializer.Deserialize(stream, cancellation), cancellation);
 
     public static async ValueTask<Failable<string>> ReadText(this IStreamSource source, Encoding? encoding = null, CancellationToken cancellation = default)
     {
-        Failable<ReadOnlyMemory<byte>> tryRead = await source.Operate(async (stream, cancellation) =>
+        Failable<byte[]> tryRead = await source.Operate<byte[]>(async (stream, cancellation) =>
         {
-            using MemoryStream buffer = new();
-            Failable tryCopy = await Failable.GuardAsync(async () => await stream.CopyToAsync(buffer, cancellation));
-            if (tryCopy.Exception != null)
-            {
-                return tryCopy.Exception;
-            }
-
             if (encoding is null)
             {
-                Failable<Encoding> tryDetect = await buffer.DetectEncoding(Encoding.UTF8);
+                Failable<Encoding> tryDetect = await stream.DetectEncoding(Encoding.UTF8);
                 if (tryDetect.Exception != null)
                 {
                     return tryDetect.Exception;
@@ -78,8 +69,14 @@ public static class StreamSourceExtensions
                 
                 encoding = tryDetect.Result;
             }
+            
+            Failable<byte[]> tryCopy = await stream.CopyToArray(cancellation);
+            if (tryCopy.Exception != null)
+            {
+                return tryCopy.Exception;
+            }
 
-            return Failable.Success<ReadOnlyMemory<byte>>(buffer.ToArray());
+            return tryCopy.Result;
         }, cancellation);
 
         if (tryRead.Exception != null)
