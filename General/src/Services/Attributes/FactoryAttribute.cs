@@ -6,6 +6,9 @@ public class FactoryAttribute(Type? implementation = null, string? name = null, 
     public string? Name => name;
     public IEnumerable<string>? ParameterNames => parameterNames;
     public IEnumerable<Type>? ParameterTypes => parameterTypes;
+
+    public override IServiceDescription GetDescription(Type type)
+        => Service.FromBuilder(ServiceKind.Singleton, base.GetDescription(type).Builder.ThroughDelegate(type));
 }
 
 [AttributeUsage(AttributeTargets.Delegate)]

@@ -5,7 +5,7 @@ public interface IServiceDependency
     string Name { get; }
     Type Type { get; }
     bool IsOptional { get; }
-    object? Key { get; }
+    object Key { get; }
 
     void Inject(object service, object instance);
 }
@@ -14,11 +14,10 @@ public static class ServiceDependencyExtensions
 {
     public static async ValueTask AutoInject(this IServiceDependency dependency, object service, IServiceResolver resolver)
     {
-        object key = dependency.Key ?? dependency.Type;
-        object? instance = dependency.IsOptional ? await resolver.Resolve(key) : await resolver.Require(key);
+        object? instance = dependency.IsOptional ? await resolver.Resolve(dependency.Key) : await resolver.Require(dependency.Key);
         if (instance != null)
         {
-            dependency.Inject(service, await resolver.Require(dependency.Key ?? dependency.Type));
+            dependency.Inject(service, instance);
         }
     }
 }
@@ -26,16 +25,35 @@ public static class ServiceDependencyExtensions
 public class ServiceDependency : IServiceDependency
 {
     public static bool IsDependency(MemberInfo member)
-        => member.HasCustomAttribute<BaseInjectAttribute>() && (member is PropertyInfo || member is FieldInfo);
+        => (member is PropertyInfo property && property.IsInitOnly()) || ((member is PropertyInfo || member is FieldInfo) && member.HasCustomAttribute<BaseInjectAttribute>());
 
     public ServiceDependency(MemberInfo member)
     {
-        Name = member.Name;
-        Type = member is PropertyInfo property ? property.PropertyType : ((FieldInfo)member).FieldType;
+        if (member is PropertyInfo property)
+        {
+            Type = property.PropertyType;
+        }
+        else if (member is FieldInfo field)
+        {
+            Type = field.FieldType;
+        }
+        else
+        {
+            throw new InvalidOperationException("Dependency must be a property or field");
+        }
 
-        BaseInjectAttribute injectAttribute = member.GetCustomAttribute<BaseInjectAttribute>().NotNull();
-        IsOptional = injectAttribute.IsOptional;
-        Key = injectAttribute.GetKey(Type);
+        Name = member.Name;
+
+        if (member.TryGetCustomAttribute(out BaseInjectAttribute? injectAttribute))
+        {
+            IsOptional = injectAttribute.IsOptional;
+            Key = injectAttribute.GetKey(Type);
+        }
+        else
+        {
+            IsOptional = true;
+            Key = Type;
+        }
 
         ParameterExpression service = Expression.Parameter(typeof(object), nameof(service));
         ParameterExpression instance = Expression.Parameter(typeof(object), nameof(instance));
@@ -47,7 +65,7 @@ public class ServiceDependency : IServiceDependency
     public string Name { get; }
     public Type Type { get; }
     public bool IsOptional { get; }
-    public object? Key { get; }
+    public object Key { get; }
 
     public void Inject(object service, object instance)
         => inject(service, instance);

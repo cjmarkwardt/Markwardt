@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface ILogger
+public interface ILogger : IMultiDisposable
 {
     string LoggerName { get; }
     IObservable<LogMessage> LogReported { get; }

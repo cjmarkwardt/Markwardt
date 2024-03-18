@@ -8,6 +8,15 @@ public interface IServiceInitializer
 
 public static class ServiceInitializerExtensions
 {
+    public static async ValueTask TryAutoInitializeServices(this object target, IServiceResolver? services = null)
+    {
+        services ??= GlobalServices.Resolver;
+        if (services != null)
+        {
+            await (await services.RequireDefault<IServiceInitializer>()).TryAutoInitialize(target, services);
+        }
+    }
+
     public static async ValueTask<bool> TryAutoInitialize(this IServiceInitializer initializer, object service, IServiceResolver resolver)
     {
         if (!InitializeFlag.IsInitialized(service))
