@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "General", "General\General.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugins", "Plugins\Plugins.csproj", "{A152FDE4-985C-4012-A552-EA2AB11BA630}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sandbox", "Sandbox\Sandbox.csproj", "{03BA02EE-3FE5-4506-8448-7541314DB718}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{A152FDE4-985C-4012-A552-EA2AB11BA630}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A152FDE4-985C-4012-A552-EA2AB11BA630}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A152FDE4-985C-4012-A552-EA2AB11BA630}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03BA02EE-3FE5-4506-8448-7541314DB718}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03BA02EE-3FE5-4506-8448-7541314DB718}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03BA02EE-3FE5-4506-8448-7541314DB718}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03BA02EE-3FE5-4506-8448-7541314DB718}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
