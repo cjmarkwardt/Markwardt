@@ -1,70 +1,23 @@
 namespace Markwardt;
 
-public interface IMaybe<out T> : IMultiDisposable
-{
-    bool HasValue { get; }
-    T Value { get; }
-
-    IMaybe<TSelected> Select<TSelected>(Func<T, TSelected> select)
-        => this.Select<T, TSelected>(select);
-
-    IMaybe<TSelected> Select<TSelected>(Func<T, IMaybe<TSelected>> select)
-        => this.Select<T, TSelected>(select);
-
-    IMaybe<TCasted> Cast<TCasted>()
-        => this.Cast<T, TCasted>();
-
-    IMaybe<TCasted> OfType<TCasted>()
-        => this.OfType<T, TCasted>();
-}
-
 public static class MaybeExtensions
 {
-    public static IMaybe<T> AsMaybe<T>(this T value)
-        => new Maybe<T>(value);
+    public static Maybe<T> Maybe<T>(this T value)
+        => new(value);
 
-    public static bool TryGetValue<T>(this IMaybe<T> maybe, out T value)
-    {
-        if (maybe.HasValue)
-        {
-            value = maybe.Value;
-            return true;
-        }
-        else
-        {
-            value = default!;
-            return false;
-        }
-    }
-
-    public static IMaybe<TSelected> Select<T, TSelected>(this IMaybe<T> maybe, Func<T, TSelected> select)
-        => maybe.TryGetValue(out T value) ? select(value).AsMaybe() : Maybe<TSelected>.Empty();
-
-    public static IMaybe<TSelected> Select<T, TSelected>(this IMaybe<T> maybe, Func<T, IMaybe<TSelected>> select)
-        => maybe.TryGetValue(out T value) ? select(value) : Maybe<TSelected>.Empty();
-
-    public static IMaybe<T> Where<T>(this IMaybe<T> maybe, Func<T, bool> where)
-        => maybe.TryGetValue(out T value) && where(value) ? maybe : Maybe<T>.Empty();
-
-    public static IMaybe<T> WhereNotNull<T>(this IMaybe<T?> maybe)
+    public static Maybe<T> WhereNotNull<T>(this Maybe<T?> maybe)
         where T : class
         => maybe.Where(x => x is not null).Select(x => x!);
 
-    public static IMaybe<T> WhereValueNotNull<T>(this IMaybe<T?> maybe)
+    public static Maybe<T> WhereValueNotNull<T>(this Maybe<T?> maybe)
         where T : struct
         => maybe.Where(x => x.HasValue).Select(x => x!.Value);
-
-    public static IMaybe<TCasted> Cast<T, TCasted>(this IMaybe<T> maybe)
-        => maybe.Select(x => (TCasted)(object?)x!);
-
-    public static IMaybe<TCasted> OfType<T, TCasted>(this IMaybe<T> maybe)
-        => maybe.Where(x => x is TCasted).Cast<T, TCasted>();
 }
 
-public readonly struct Maybe<T> : IMaybe<T>
+public readonly struct Maybe<T> : IMultiDisposable
 {
-    public static IMaybe<T> Empty()
-        => new Maybe<T>();
+    public static implicit operator Maybe<T>(T value)
+        => new(value);
 
     public Maybe()
     {
@@ -83,6 +36,35 @@ public readonly struct Maybe<T> : IMaybe<T>
     public readonly bool HasValue { get; }
 
     public readonly T Value => HasValue ? value : throw new InvalidOperationException("Has no value");
+    
+    public bool TryGetValue(out T value)
+    {
+        if (HasValue)
+        {
+            value = Value;
+            return true;
+        }
+        else
+        {
+            value = default!;
+            return false;
+        }
+    }
+
+    public Maybe<TSelected> Select<TSelected>(Func<T, TSelected> select)
+        => TryGetValue(out T outValue) ? select(outValue).Maybe() : default;
+
+    public Maybe<TSelected> Select<TSelected>(Func<T, Maybe<TSelected>> select)
+        => TryGetValue(out T outValue) ? select(outValue) : default;
+
+    public Maybe<T> Where(Func<T, bool> where)
+        => TryGetValue(out T outValue) && where(outValue) ? this : default;
+
+    public Maybe<TCasted> Cast<TCasted>()
+        => Select(x => (TCasted)(object?)x!);
+
+    public Maybe<TCasted> OfType<TCasted>()
+        => Where(x => x is TCasted).Cast<TCasted>();
 
     public override string ToString()
         => HasValue ? Value?.ToString() ?? "<NULL>" : "<EMPTY>";

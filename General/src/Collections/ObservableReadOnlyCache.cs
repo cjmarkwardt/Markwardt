@@ -13,10 +13,10 @@ public interface IObservableReadOnlyCache<TKey, T> : IObservableReadOnlyList<T>
 
 public static class ObservableReadOnlyCacheExtensions
 {
-    public static IMaybe<T> GetValue<TKey, T>(this IObservableReadOnlyCache<TKey, T> cache, TKey key)
+    public static Maybe<T> GetValue<TKey, T>(this IObservableReadOnlyCache<TKey, T> cache, TKey key)
         where TKey : notnull
         where T : notnull
-        => cache.TryGetValue(key, out T? value) ? value.AsMaybe() : Maybe<T>.Empty();
+        => cache.TryGetValue(key, out T? value) ? value.Maybe() : default;
 
     public static bool ContainsKey<TKey, T>(this IObservableReadOnlyCache<TKey, T> cache, TKey key)
         where TKey : notnull

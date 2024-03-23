@@ -3,10 +3,10 @@ namespace Markwardt;
 public static class FailableExtensions
 {
     public static Failable Nest(this Failable failable, string message)
-        => failable.Exception == null ? failable : new(new InvalidOperationException(message, failable.Exception));
+        => failable.Exception is null ? failable : new(new InvalidOperationException(message, failable.Exception));
 
     public static Failable<T> Nest<T>(this Failable<T> failable, string message)
-        => failable.Exception == null ? failable : new(new InvalidOperationException(message, failable.Exception));
+        => failable.Exception is null ? failable : new(new InvalidOperationException(message, failable.Exception));
 
     public static Failable<T> AsFailable<T>(this T result)
         => Failable.Success(result);
@@ -22,6 +22,39 @@ public static class FailableExtensions
 
     public static Failable<T> AsFailable<T>(this Exception exception, string outerMessage)
         => exception.AsFailable<T>().Nest(outerMessage);
+
+    public static bool IsFailure(this Failable failable)
+        => failable.Exception is not null;
+
+    public static bool IsSuccess(this Failable failable)
+        => failable.Exception is null;
+
+    public static bool IsCancellation(this Failable failable)
+        => failable.Exception is OperationCanceledException;
+
+    public static Failable WithLogging(this Failable failable, ILoggable loggable, string? parentMessage = null, Action<Exception>? onFailure = null, IEnumerable<string>? category = null, object? source = null, [CallerFilePath] string? path = null, [CallerLineNumber] int line = -1)
+    {
+        failable = parentMessage is null ? failable : failable.Nest(parentMessage);
+        if (failable.Exception is not null)
+        {
+            loggable.LogError(failable.Exception, category, source, path, line);
+            onFailure?.Invoke(failable.Exception);
+        }
+
+        return failable;
+    }
+
+    public static Failable<T> WithLogging<T>(this Failable<T> failable, ILoggable loggable, string? parentMessage = null, Action<Exception>? onFailure = null, IEnumerable<string>? category = null, object? source = null, [CallerFilePath] string? path = null, [CallerLineNumber] int line = -1)
+    {
+        failable = parentMessage is null ? failable : failable.Nest(parentMessage);
+        if (failable.Exception is not null)
+        {
+            loggable.LogError(failable.Exception, category, source, path, line);
+            onFailure?.Invoke(failable.Exception);
+        }
+
+        return failable;
+    }
 }
 
 public class Failable

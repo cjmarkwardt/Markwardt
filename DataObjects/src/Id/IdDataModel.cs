@@ -201,8 +201,8 @@ public class IdDataModel : IIdDataModel
         }
     }
 
-    public IMaybe<object?> GetProperty(string name)
-        => properties.TryGetValue(name, out object? value) ? value.AsMaybe() : Maybe<object?>.Empty();
+    public Maybe<object?> GetProperty(string name)
+        => properties.TryGetValue(name, out object? value) ? value.Maybe() : default;
 
     public bool SetProperty(string name, object? value)
     {

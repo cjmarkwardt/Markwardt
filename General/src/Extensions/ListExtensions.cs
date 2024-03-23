@@ -2,8 +2,8 @@ namespace Markwardt;
 
 public static class ListExtensions
 {
-    public static IMaybe<T> TryDequeue<T>(this IList<T> list)
-        => list.Count == 0 ? Maybe<T>.Empty() : list[0].AsMaybe();
+    public static Maybe<T> TryDequeue<T>(this IList<T> list)
+        => list.Count == 0 ? default : list[0].Maybe();
 
     public static IList<T> TryDequeue<T>(this IManyList<T> list, int count)
     {
@@ -27,8 +27,8 @@ public static class ListExtensions
         return items;
     }
 
-    public static IMaybe<T> TryPop<T>(this IList<T> list)
-        => list.Count == 0 ? Maybe<T>.Empty() : list[list.Count - 1].AsMaybe();
+    public static Maybe<T> TryPop<T>(this IList<T> list)
+        => list.Count == 0 ? default : list[list.Count - 1].Maybe();
 
     public static IList<T> TryPop<T>(this IManyList<T> list, int count)
     {

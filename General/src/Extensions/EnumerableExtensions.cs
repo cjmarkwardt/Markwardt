@@ -2,6 +2,30 @@ namespace Markwardt;
 
 public static class EnumerableExtensions
 {
+    public static bool None<T>(this IEnumerable<T> items)
+        => !items.Any();
+
+    public static bool MinSequenceEqual<T>(this IEnumerable<T> items, IEnumerable<T> other, IEqualityComparer<T>? comparer = null)
+    {
+        comparer ??= EqualityComparer<T>.Default;
+
+        IEnumerator<T> itemsEnumerator = items.GetEnumerator();
+        IEnumerator<T> otherEnumerator = other.GetEnumerator();
+        while (itemsEnumerator.Next().TryGetValue(out T item))
+        {
+            Maybe<T> maybeOtherItem = otherEnumerator.Next();
+            if (!maybeOtherItem.HasValue || (maybeOtherItem.TryGetValue(out T otherItem) && !comparer.Equals(item, otherItem)))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static IEnumerable<T> When<T>(this IEnumerable<T> items, Func<IEnumerable<T>, bool> condition, Func<IEnumerable<T>, IEnumerable<T>> transform)
+        => condition(items) ? transform(items) : items;
+
     public static void ForEach<T>(this IEnumerable<T> items, Action<T> action)
     {
         foreach (T item in items)

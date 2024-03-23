@@ -1,32 +1,28 @@
 namespace Markwardt;
 
-public interface ILogger : IMultiDisposable
+[Singleton<Logger>]
+public interface ILogger : ILoggable, ILogReceiver;
+
+public class Logger : ILogger
 {
-    string LoggerName { get; }
-    IObservable<LogMessage> LogReported { get; }
+    private readonly Subject<LogMessage> logged = new();
+    public IObservable<LogMessage> Logged => logged;
 
-    void Log(LogMessage report);
-}
+    [Inject<LoggablesTag>]
+    public required IReadOnlyList<ILoggable> Loggables { get; init; }
 
-public static class LoggerExtensions
-{
-    public static void Log(this ILogger logger, string category, object? content, [CallerFilePath] string sourcePath = "", [CallerLineNumber] int sourceLine = 0)
-        => logger.Log(LogMessage.FromCaller(logger.LoggerName, category, content, sourcePath, sourceLine));
+    [Inject<DisabledLogCategoriesTag>]
+    public required IReadOnlyList<IEnumerable<string>> DisabledCategories { get; init; }
 
-    public static void LogActivity(this ILogger logger, object? content, [CallerFilePath] string sourcePath = "", [CallerLineNumber] int sourceLine = 0)
-        => logger.Log("Activity", content, sourcePath, sourceLine);
-
-    public static void LogError(this ILogger logger, object? content, [CallerFilePath] string sourcePath = "", [CallerLineNumber] int sourceLine = 0)
-        => logger.Log("Error", content, sourcePath, sourceLine);
-
-    public static void LogError(this ILogger logger, Failable failable, [CallerFilePath] string sourcePath = "", [CallerLineNumber] int sourceLine = 0)
+    public void Log(LogMessage message)
     {
-        if (failable.Exception != null)
+        if (DisabledCategories.Any(x => x.MinSequenceEqual(message.Category)))
         {
-            logger.LogError(failable.Exception, sourcePath, sourceLine);
+            return;
         }
-    }
 
-    public static IDisposable RouteLogsTo(this ILogger logger, ILogger destination, Func<LogMessage, LogMessage>? transform = null)
-        => logger.LogReported.Subscribe(x => destination.Log((transform?.Invoke(x) ?? x) with { Sender = $"{destination.LoggerName}/{logger.LoggerName}" }));
+        message = message.RemoveSource(this);
+        Loggables.ForEach(x => x.Log(message));
+        logged.OnNext(message);
+    }
 }

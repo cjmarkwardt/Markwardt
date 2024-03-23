@@ -2,7 +2,7 @@ namespace Markwardt;
 
 public interface IChainableDisposable : IMultiDisposable
 {
-    void ChainDisposables(params object?[] disposables);
+    IDisposable ChainDisposables(params object?[] disposables);
     void UnchainDisposables(params object?[] disposables);
 }
 

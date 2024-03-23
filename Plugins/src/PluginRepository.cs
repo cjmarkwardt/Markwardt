@@ -18,7 +18,7 @@ public static class PluginRepositoryExtensions
     public static async ValueTask UnloadAll(this IPluginRepository plugins)
         => await Task.WhenAll(plugins.Modules.Select(async x => await x.Unload()));
 
-    public static IMaybe<IPlugin> GetPlugin(this IPluginRepository plugins, string moduleId, string id)
+    public static Maybe<IPlugin> GetPlugin(this IPluginRepository plugins, string moduleId, string id)
         => plugins.Modules.GetValue(moduleId).Select(x => x.Plugins.GetValue(id));
 }
 

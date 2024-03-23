@@ -15,10 +15,9 @@ public class FolderPluginSource(IFolder folder, IEnumerable<Type> sharedTypes) :
     public async ValueTask Refresh(bool purge = true)
         => await executor.Execute(async () =>
         {
-            Failable<IEnumerable<IFolder>> tryDescend = await folder.DescendAllFolders().Consolidate();
-            if (tryDescend.Exception != null)
+            Failable<IEnumerable<IFolder>> tryDescend = (await folder.DescendAllFolders().Consolidate()).WithLogging(this, "Failed to refresh modules");
+            if (tryDescend.IsFailure())
             {
-                Fail(tryDescend.Exception.AsFailable("Failed to refresh modules"));
                 return;
             }
 
@@ -36,12 +35,8 @@ public class FolderPluginSource(IFolder folder, IEnumerable<Type> sharedTypes) :
         {
             if (!modules.ContainsKey(moduleFolder.Name))
             {
-                Failable<IPluginModule> tryRead = await ModuleReader.Read(moduleFolder.Name, moduleFolder, sharedTypes);
-                if (tryRead.Exception != null)
-                {
-                    Fail(tryRead.Exception.AsFailable($"Failed to read module at {moduleFolder.FullName}"));
-                }
-                else
+                Failable<IPluginModule> tryRead = (await ModuleReader.Read(moduleFolder.Name, moduleFolder, sharedTypes)).WithLogging(this, $"Failed to read module at {moduleFolder.FullName}");
+                if (tryRead.IsSuccess())
                 {
                     modules.Add(tryRead.Result);
                 }
