@@ -35,4 +35,18 @@ public static class ServiceResolverExtensions
         where TTag : IServiceTag
         where T : class
         => (T)await resolver.Require(typeof(TTag));
+
+    public static async ValueTask Inject(this IServiceResolver services, object instance)
+    {
+        if (instance is not IServiceInjector)
+        {
+            await (await services.RequireDefault<IServiceInjector>()).Inject(instance, services);
+        }
+    }
+
+    public static async ValueTask<object> Create(this IServiceResolver services, Type type, IReadOnlyDictionary<string, object?>? arguments = null)
+        => await new ServiceInstantiator(type).Build(services, arguments);
+
+    public static async ValueTask<T> Create<T>(this IServiceResolver services, IReadOnlyDictionary<string, object?>? arguments = null)
+        => (T) await services.Create(typeof(T), arguments);
 }

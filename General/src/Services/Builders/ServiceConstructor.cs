@@ -31,7 +31,11 @@ public class ServiceConstructor(MethodBase method) : IServiceBuilder
         private readonly InvokeTarget target;
 
         public async ValueTask<object> Invoke(IServiceResolver resolver, IReadOnlyDictionary<string, object?>? arguments)
-            => await target.Invoke(await ResolveParameters(resolver, arguments));
+        {
+            object instance = await target.Invoke(await ResolveParameters(resolver, arguments));
+            await resolver.Inject(instance);
+            return instance;
+        }
 
         private InvokeTarget GenerateTarget()
         {
@@ -43,7 +47,7 @@ public class ServiceConstructor(MethodBase method) : IServiceBuilder
             Expression body;
             if (method is ConstructorInfo constructor)
             {
-                body = Expression.New(typeof(ValueTask<object>).GetConstructor(new Type[] { typeof(object) })!, Expression.New(constructor, CreateArguments(constructor)));
+                body = Expression.New(typeof(ValueTask<object>).GetConstructor([typeof(object)])!, Expression.New(constructor, CreateArguments(constructor)));
             }
             else if (method is MethodInfo directMethod)
             {

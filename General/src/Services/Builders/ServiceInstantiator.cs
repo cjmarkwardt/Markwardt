@@ -39,7 +39,8 @@ public class ServiceInstantiator(Type implementation, Func<Type, MethodBase?>? m
         IReadOnlyDictionary<string, Type> typeArguments = generalizer.GetTypeArguments(arguments);
         if (!invokers.TryGetValue(typeArguments, out ServiceConstructor? constructor))
         {
-            constructor = new ServiceConstructor(methodLocator(generalizer.Specify(typeArguments)).NotNull());
+            Type type = generalizer.Specify(typeArguments);
+            constructor = new ServiceConstructor(methodLocator(type).NotNull($"Unable to find construction method for {type}"));
             invokers.Add(typeArguments, constructor);
         }
 
