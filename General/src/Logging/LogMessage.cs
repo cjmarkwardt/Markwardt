@@ -10,15 +10,15 @@ public record LogMessage(DateTime Timestamp, object Content, IEnumerable<string>
 
     private IEnumerable<string> SourceDisplayParts => Enumerable.Empty<string>()
         .When(_ => Location is not null, x => x.Append(Location!.ToString()))
-        .When(_ => Sources.Any(), x => x.Concat(Sources.Select(x => x.ToString()).WhereNotNull()));
+        .When(_ => Sources.Any(), x => x.Concat(Sources.Select(x => x is ILogIdentifiable identifiable ? identifiable.GetLogIdentifier() ?? x.GetType().Name : x.GetType().Name).WhereNotNull()));
 
     private IEnumerable<string> ToStringParts => Enumerable.Empty<string>()
         .Append(TimestampDisplay)
-        .When(_ => string.IsNullOrEmpty(CategoryDisplay), x => x.Append(CategoryDisplay))
-        .When(_ => string.IsNullOrEmpty(SourceDisplay), x => x.Append(SourceDisplay))
+        .When(_ => !string.IsNullOrWhiteSpace(CategoryDisplay), x => x.Append(CategoryDisplay))
+        .When(_ => !string.IsNullOrWhiteSpace(SourceDisplay), x => x.Append(SourceDisplay))
         .Append(ContentDisplay);
 
-    public string TimestampDisplay => Timestamp.ToString("d MMM y h:mm:ss");
+    public string TimestampDisplay => Timestamp.ToString("d-MMM-y h:mm:ss");
     public string CategoryDisplay => string.Join("/", Category);
     public string SourceDisplay => string.Join(" -> ", SourceDisplayParts);
     public string ContentDisplay => Content.ToString() ?? "<null>";

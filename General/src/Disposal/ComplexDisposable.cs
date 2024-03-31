@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IComplexDisposable : IChainableDisposable, ITrackableDisposable, ILogger, INotifyPropertyChanged
+public interface IComplexDisposable : IChainableDisposable, ITrackableDisposable, INotifyPropertyChanged
 {
     IComplexDisposable? DisposalParent { get; set; }
 }

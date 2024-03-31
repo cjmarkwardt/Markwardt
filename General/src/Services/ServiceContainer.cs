@@ -19,6 +19,8 @@ public class ServiceContainer : ComplexDisposable, IServiceContainer
     private readonly IServiceResolver? parent;
     private readonly Dictionary<object, Registration> registrations = [];
 
+    private TaskCompletionSource<ITopLogger>? topLogger;
+
     public void Configure(object key, IServiceDescription description)
     {
         Clear(key);
@@ -40,6 +42,12 @@ public class ServiceContainer : ComplexDisposable, IServiceContainer
 
     public async ValueTask<object?> Resolve(object key)
     {
+        if (topLogger is null)
+        {
+            topLogger = new();
+            topLogger.SetResult(await this.RequireDefault<ITopLogger>());
+        }
+
         if (registrations.TryGetValue(key, out Registration? registration))
         {
             return await registration.Get(this);
@@ -92,12 +100,12 @@ public class ServiceContainer : ComplexDisposable, IServiceContainer
 
     private Registration Add(object key, IServiceDescription description)
     {
-        Registration registration = new(description);
+        Registration registration = new(this, description);
         registrations[key] = registration;
         return registration;
     }
 
-    private sealed class Registration(IServiceDescription description) : IDisposable, IAsyncDisposable
+    private sealed class Registration(ServiceContainer container, IServiceDescription description) : IDisposable, IAsyncDisposable
     {
         private object? instance;
 
@@ -107,7 +115,16 @@ public class ServiceContainer : ComplexDisposable, IServiceContainer
         {
             if (description.Kind == ServiceKind.Singleton)
             {
-                instance ??= await Create(resolver);
+                if (instance is null)
+                {
+                    instance = await Create(resolver);
+
+                    if (container.topLogger?.Task.IsCompleted == true)
+                    {
+                        instance.RouteLogsTo(await container.topLogger.Task);
+                    }
+                }
+                
                 return instance;
             }
             else

@@ -32,24 +32,24 @@ public static class FailableExtensions
     public static bool IsCancellation(this Failable failable)
         => failable.Exception is OperationCanceledException;
 
-    public static Failable WithLogging(this Failable failable, ILoggable loggable, string? parentMessage = null, Action<Exception>? onFailure = null, IEnumerable<string>? category = null, object? source = null, [CallerFilePath] string? path = null, [CallerLineNumber] int line = -1)
+    public static Failable WithLogging(this Failable failable, object target, string? parentMessage = null, Action<Exception>? onFailure = null, IEnumerable<string>? category = null, object? source = null, [CallerFilePath] string? path = null, [CallerLineNumber] int line = -1)
     {
         failable = parentMessage is null ? failable : failable.Nest(parentMessage);
         if (failable.Exception is not null)
         {
-            loggable.LogError(failable.Exception, category, source, path, line);
+            target.LogError(failable.Exception, category, source, path, line);
             onFailure?.Invoke(failable.Exception);
         }
 
         return failable;
     }
 
-    public static Failable<T> WithLogging<T>(this Failable<T> failable, ILoggable loggable, string? parentMessage = null, Action<Exception>? onFailure = null, IEnumerable<string>? category = null, object? source = null, [CallerFilePath] string? path = null, [CallerLineNumber] int line = -1)
+    public static Failable<T> WithLogging<T>(this Failable<T> failable, object target, string? parentMessage = null, Action<Exception>? onFailure = null, IEnumerable<string>? category = null, object? source = null, [CallerFilePath] string? path = null, [CallerLineNumber] int line = -1)
     {
         failable = parentMessage is null ? failable : failable.Nest(parentMessage);
         if (failable.Exception is not null)
         {
-            loggable.LogError(failable.Exception, category, source, path, line);
+            target.LogError(failable.Exception, category, source, path, line);
             onFailure?.Invoke(failable.Exception);
         }
 
@@ -166,6 +166,9 @@ public class Failable
         isFailed = Exception != null;
         exception = Exception!;
     }
+
+    public Failable<T> WithResult<T>(T result)
+        => Exception is null ? result.AsFailable() : Exception.AsFailable<T>();
 
     public override string ToString()
         => Exception != null ? $"Failure ({Exception.Message})" : "Success";
