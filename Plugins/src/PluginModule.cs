@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IPluginModule : IComplexDisposable
+public interface IPluginModule : IExtendedDisposable
 {
     [Factory<PluginModule>]
     delegate ValueTask<IPluginModule> Factory(string id, string name, string author, string description, IDynamicAssembly assembly);
@@ -19,7 +19,7 @@ public interface IPluginModule : IComplexDisposable
     ValueTask<bool> Unload();
 }
 
-public class PluginModule(string id, string name, string author, string description, IDynamicAssembly assembly, IServiceResolver resolver) : ComplexDisposable, IPluginModule
+public class PluginModule(string id, string name, string author, string description, IDynamicAssembly assembly, IServiceResolver resolver) : ExtendedDisposable, IPluginModule
 {
     private readonly SequentialExecutor executor = new();
 
@@ -64,9 +64,9 @@ public class PluginModule(string id, string name, string author, string descript
             return false;
         });
 
-    protected override void PrepareDisposal()
+    protected override void OnPrepareDisposal()
     {
-        base.PrepareDisposal();
+        base.OnPrepareDisposal();
 
         executor.DisposeWith(this);
         assembly.DisposeWith(this);

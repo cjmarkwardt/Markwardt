@@ -1,12 +1,12 @@
 namespace Markwardt;
 
-public interface IIdDataRepository : IDataRepository, IIdDataLoader, IComplexDisposable
+public interface IIdDataRepository : IDataRepository, IIdDataLoader, IExtendedDisposable
 {
     [Factory<IdDataRepository>]
     delegate IIdDataRepository Factory(IIdDataSource source);
 }
 
-public class IdDataRepository : ComplexDisposable, IIdDataRepository, IIdDataNotifier
+public class IdDataRepository : ExtendedDisposable, IIdDataRepository, IIdDataNotifier
 {
     public IdDataRepository(IIdDataSource depot)
     {

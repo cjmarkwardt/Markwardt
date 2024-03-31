@@ -10,7 +10,10 @@ public static class InvokeExtensions
         }
     }
     
-    public static Task InvokeAll(this IEnumerable<AsyncAction> actions)
+    public static Task InvokeAll(this IEnumerable<Task> tasks)
+        => Task.WhenAll(tasks);
+    
+    public static Task InvokeAll(this IEnumerable<Func<ValueTask>> actions)
         => Task.WhenAll(actions.Select(action => action.Invoke().AsTask()));
 
     public static void TryDispose(this object? target)

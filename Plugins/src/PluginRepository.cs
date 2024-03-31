@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IPluginRepository : IComplexDisposable
+public interface IPluginRepository : IExtendedDisposable
 {
     IObservableReadOnlyCache<string, IPluginModule> Modules { get; }
 
@@ -22,7 +22,7 @@ public static class PluginRepositoryExtensions
         => plugins.Modules.GetValue(moduleId).Select(x => x.Plugins.GetValue(id));
 }
 
-public class PluginRepository : ComplexDisposable, IPluginRepository
+public class PluginRepository : ExtendedDisposable, IPluginRepository
 {
     public PluginRepository([Inject<PluginSourcesTag>] IObservableReadOnlyCollection<IPluginSource> sources)
     {

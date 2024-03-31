@@ -1,8 +1,8 @@
 namespace Markwardt;
 
-public interface IServiceContainer : IServiceResolver, IServiceConfiguration, IComplexDisposable { }
+public interface IServiceContainer : IServiceResolver, IServiceConfiguration, IExtendedDisposable { }
 
-public class ServiceContainer : ComplexDisposable, IServiceContainer
+public class ServiceContainer : ExtendedDisposable, IServiceContainer
 {
     public ServiceContainer(IServiceHandler? handler = null, IServiceResolver? parent = null)
     {

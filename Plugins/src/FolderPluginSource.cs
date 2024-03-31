@@ -3,7 +3,7 @@ namespace Markwardt;
 [Factory<FolderPluginSource>]
 public delegate ValueTask<IPluginSource> FolderPluginSourceFactory(IFolder folder, IEnumerable<Type> sharedTypes);
 
-public class FolderPluginSource(IFolder folder, IEnumerable<Type> sharedTypes) : ComplexDisposable, IPluginSource
+public class FolderPluginSource(IFolder folder, IEnumerable<Type> sharedTypes) : ExtendedDisposable, IPluginSource
 {
     private readonly SequentialExecutor executor = new();
 

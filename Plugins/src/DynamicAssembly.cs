@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IDynamicAssembly : IComplexDisposable
+public interface IDynamicAssembly : IExtendedDisposable
 {
     [Factory<DynamicAssembly>]
     delegate ValueTask<IDynamicAssembly> Factory(IFile file, IEnumerable<Type> sharedTypes);
@@ -13,7 +13,7 @@ public interface IDynamicAssembly : IComplexDisposable
     ValueTask<bool> Unload();
 }
 
-public class DynamicAssembly(IFile file, IEnumerable<Type> sharedTypes) : ComplexDisposable, IDynamicAssembly
+public class DynamicAssembly(IFile file, IEnumerable<Type> sharedTypes) : ExtendedDisposable, IDynamicAssembly
 {
     private readonly Type[] sharedTypes = sharedTypes.ToArray();
     private readonly SequentialExecutor executor = new();
@@ -43,9 +43,9 @@ public class DynamicAssembly(IFile file, IEnumerable<Type> sharedTypes) : Comple
     public async ValueTask<bool> Unload()
         => await executor.Execute(UnloadAssembly);
 
-    protected override void PrepareDisposal()
+    protected override void OnPrepareDisposal()
     {
-        base.PrepareDisposal();
+        base.OnPrepareDisposal();
 
         executor.DisposeWith(this);
     }

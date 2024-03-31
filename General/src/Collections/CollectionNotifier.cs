@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface ICollectionNotifier : IComplexDisposable, INotifyCollectionChanged;
+public interface ICollectionNotifier : IExtendedDisposable, INotifyCollectionChanged;
 
 public static class CollectionNotifierExtensions
 {
@@ -9,7 +9,7 @@ public static class CollectionNotifierExtensions
         => new CollectionNotifier<T>(source);
 }
 
-public class CollectionNotifier<T> : ComplexDisposable, ICollectionNotifier
+public class CollectionNotifier<T> : ExtendedDisposable, ICollectionNotifier
     where T : notnull
 {
     public CollectionNotifier(IObservable<IChangeSet<T>> source)

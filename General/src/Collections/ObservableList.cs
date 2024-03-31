@@ -119,9 +119,9 @@ public class ObservableList<T> : ObservableReadOnlyList<T>, IObservableList<T>, 
     void IList.Remove(object? value)
         => Remove((T)value!);
 
-    protected override void PrepareDisposal()
+    protected override void OnPrepareDisposal()
     {
-        base.PrepareDisposal();
+        base.OnPrepareDisposal();
 
         if (ItemDisposal is ItemDisposal.OnDisposal || ItemDisposal is ItemDisposal.Full)
         {

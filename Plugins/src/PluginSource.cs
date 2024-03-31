@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IPluginSource : IComplexDisposable
+public interface IPluginSource : IExtendedDisposable
 {
     IObservableReadOnlyCache<string, IPluginModule> Modules { get; }
 

@@ -3,7 +3,7 @@ namespace Markwardt;
 public interface IObservableReadOnlyList<T> : IObservableReadOnlyCollection<T>, IReadOnlyList<T>
     where T : notnull;
 
-public class ObservableReadOnlyList<T> : ComplexDisposable, IObservableReadOnlyList<T>, IList
+public class ObservableReadOnlyList<T> : ExtendedDisposable, IObservableReadOnlyList<T>, IList
     where T : notnull
 {
     public ObservableReadOnlyList(DynamicData.IObservableList<T> source)
