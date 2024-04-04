@@ -2,7 +2,7 @@ namespace Markwardt;
 
 public interface IPluginRepository : IExtendedDisposable
 {
-    IObservableReadOnlyCache<string, IPluginModule> Modules { get; }
+    IObservableReadOnlyLookupList<string, IPluginModule> Modules { get; }
 
     ValueTask Refresh(bool purge = true);
 }
@@ -24,16 +24,16 @@ public static class PluginRepositoryExtensions
 
 public class PluginRepository : ExtendedDisposable, IPluginRepository
 {
-    public PluginRepository([Inject<PluginSourcesTag>] IObservableReadOnlyCollection<IPluginSource> sources)
+    public PluginRepository([Inject<PluginSourcesTag>] IObservableReadOnlyList<IPluginSource> sources)
     {
         this.sources = sources;
 
-        Modules = sources.Observe().TransformMany(x => x.Modules).ToCache(x => x.Id).DisposeWith(this);
+        Modules = sources.Connect().TransformMany(x => x.Modules.AsObservableList()).ObserveAsLookupList(x => x.Id).DisposeWith(this);
     }
 
-    private readonly IObservableReadOnlyCollection<IPluginSource> sources;
+    private readonly IObservableReadOnlyList<IPluginSource> sources;
 
-    public IObservableReadOnlyCache<string, IPluginModule> Modules { get; }
+    public IObservableReadOnlyLookupList<string, IPluginModule> Modules { get; }
 
     public async ValueTask Refresh(bool purge = true)
         => await Task.WhenAll(sources.Select(x => x.Refresh(purge).AsTask()));

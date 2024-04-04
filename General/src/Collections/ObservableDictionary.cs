@@ -2,24 +2,36 @@ namespace Markwardt;
 
 public interface IObservableDictionary<TKey, T> : IObservableReadOnlyDictionary<TKey, T>, IObservableList<KeyValuePair<TKey, T>>, IDictionary<TKey, T>
     where TKey : notnull
-    where T : notnull;
+    where T : notnull
+{
+    new int Count { get; }
+}
 
 public class ObservableDictionary<TKey, T> : ObservableList<KeyValuePair<TKey, T>>, IObservableDictionary<TKey, T>
     where TKey : notnull
     where T : notnull
 {
-    public ObservableDictionary(IEnumerable<KeyValuePair<TKey, T>>? items = null)
-        : base(items)
+    public ObservableDictionary(ISourceList<KeyValuePair<TKey, T>> source)
+        : base(source)
     {
-        keys = new(Keys);
-        values = new(Values);
+        keys = new EnumerableCollection<TKey>(Keys);
+        values = new EnumerableCollection<T>(Values);
 
-        this.OutputToDictionary(dictionary, x => x.Key, x => x.Value).DisposeWith(this);
+        Connect().OnItemRemoved(OnRemove).Subscribe().DisposeWith(this);
+        Connect().OnItemAdded(x => lookup.Add(x.Key, x.Value)).Subscribe().DisposeWith(this);
+        Connect().OnItemRemoved(x => lookup.Remove(x.Key)).Subscribe().DisposeWith(this);
     }
 
-    private readonly Dictionary<TKey, T> dictionary = [];
-    private readonly ViewCollection<TKey> keys;
-    private readonly ViewCollection<T> values;
+    public ObservableDictionary()
+        : this(new SourceList<KeyValuePair<TKey, T>>()) { }
+
+    public ObservableDictionary(IEnumerable<KeyValuePair<TKey, T>> items)
+        : this()
+        => Add(items);
+
+    private readonly Dictionary<TKey, T> lookup = [];
+    private readonly ICollection<TKey> keys;
+    private readonly ICollection<T> values;
 
     public IEnumerable<TKey> Keys => this.Select(x => x.Key);
     public IEnumerable<T> Values => this.Select(x => x.Value);
@@ -29,7 +41,7 @@ public class ObservableDictionary<TKey, T> : ObservableList<KeyValuePair<TKey, T
 
     public T this[TKey key]
     {
-        get => dictionary[key];
+        get => lookup[key];
         set
         {
             Remove(key);
@@ -38,10 +50,10 @@ public class ObservableDictionary<TKey, T> : ObservableList<KeyValuePair<TKey, T
     }
 
     public bool ContainsKey(TKey key)
-        => dictionary.ContainsKey(key);
+        => lookup.ContainsKey(key);
 
     public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out T value)
-        => dictionary.TryGetValue(key, out value);
+        => lookup.TryGetValue(key, out value);
 
     public void Add(TKey key, T value)
         => Add(new KeyValuePair<TKey, T>(key, value));
@@ -50,39 +62,59 @@ public class ObservableDictionary<TKey, T> : ObservableList<KeyValuePair<TKey, T
     {
         if (TryGetValue(key, out T? value))
         {
-            return Remove(new KeyValuePair<TKey, T>(key, value));
+            Remove(new KeyValuePair<TKey, T>(key, value));
+            return true;
         }
 
         return false;
     }
 
-    private sealed class ViewCollection<TView>(IEnumerable<TView> target) : ICollection<TView>
+    protected override void OnPrepareDisposal()
     {
-        public int Count => target.Count();
+        base.OnPrepareDisposal();
+
+        if (ItemDisposal is ItemDisposal.OnDisposal || ItemDisposal is ItemDisposal.Full)
+        {
+            this.ForEach(x => x.Value.DisposeWith(this));
+        }
+    }
+
+    private void OnRemove(KeyValuePair<TKey, T> pair)
+    {
+        if (ItemDisposal is ItemDisposal.OnRemoval || ItemDisposal is ItemDisposal.Full)
+        {
+            this.DisposeInBackground(pair.Value);
+        }
+    }
+
+    private sealed class EnumerableCollection<TItem>(IEnumerable<TItem> items) : ICollection<TItem>
+    {
+        public int Count => items.Count();
+
         public bool IsReadOnly => true;
 
-        public void Add(TView item)
+        public void Add(TItem item)
             => throw new NotSupportedException();
 
         public void Clear()
             => throw new NotSupportedException();
 
-        public bool Remove(TView item)
+        public bool Remove(TItem item)
             => throw new NotSupportedException();
 
-        public bool Contains(TView item)
-            => target.Contains(item);
+        public bool Contains(TItem item)
+            => items.Contains(item);
 
-        public void CopyTo(TView[] array, int arrayIndex)
+        public void CopyTo(TItem[] array, int arrayIndex)
         {
-            foreach (TView item in target)
+            foreach (TItem item in items)
             {
                 array[arrayIndex++] = item;
             }
         }
 
-        public IEnumerator<TView> GetEnumerator()
-            => target.GetEnumerator();
+        public IEnumerator<TItem> GetEnumerator()
+            => items.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator()
             => GetEnumerator();

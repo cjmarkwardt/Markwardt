@@ -12,7 +12,7 @@ public interface IPluginModule : IExtendedDisposable
     string Author { get; }
     string Description { get; }
 
-    IObservableReadOnlyCache<string, IPlugin> Plugins { get; }
+    IObservableReadOnlyLookupList<string, IPlugin> Plugins { get; }
 
     ValueTask<bool> Load();
     ValueTask Reload();
@@ -30,8 +30,8 @@ public class PluginModule(string id, string name, string author, string descript
     public string Author { get; } = author;
     public string Description { get; } = description;
 
-    private readonly ObservableCache<string, IPlugin> plugins = new(x => x.Id) { ItemDisposal = ItemDisposal.Full };
-    public IObservableReadOnlyCache<string, IPlugin> Plugins => plugins;
+    private readonly ObservableLookupList<string, IPlugin> plugins = new(x => x.Id) { ItemDisposal = ItemDisposal.Full };
+    public IObservableReadOnlyLookupList<string, IPlugin> Plugins => plugins;
 
     public async ValueTask<bool> Load()
         => await executor.Execute(async () =>

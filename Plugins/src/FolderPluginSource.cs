@@ -7,8 +7,8 @@ public class FolderPluginSource(IFolder folder, IEnumerable<Type> sharedTypes) :
 {
     private readonly SequentialExecutor executor = new();
 
-    private readonly ObservableCache<string, IPluginModule> modules = new(x => x.Id) { ItemDisposal = ItemDisposal.Full };
-    public IObservableReadOnlyCache<string, IPluginModule> Modules => modules;
+    private readonly ObservableLookupList<string, IPluginModule> modules = new(x => x.Id) { ItemDisposal = ItemDisposal.Full };
+    public IObservableReadOnlyLookupList<string, IPluginModule> Modules => modules;
 
     public required IPluginModuleReader ModuleReader { get; init; }
 
@@ -33,7 +33,7 @@ public class FolderPluginSource(IFolder folder, IEnumerable<Type> sharedTypes) :
     {
         foreach (IFolder moduleFolder in moduleFolders)
         {
-            if (!modules.ContainsKey(moduleFolder.Name))
+            if (!modules.Lookup.ContainsKey(moduleFolder.Name))
             {
                 Failable<IPluginModule> tryRead = (await ModuleReader.Read(moduleFolder.Name, moduleFolder, sharedTypes)).WithLogging(this, $"Failed to read module at {moduleFolder.FullName}");
                 if (tryRead.IsSuccess())
@@ -50,7 +50,7 @@ public class FolderPluginSource(IFolder folder, IEnumerable<Type> sharedTypes) :
         
         foreach (IPluginModule purgedModule in modules.Where(x => !existingModules.Contains(x.Id)))
         {
-            modules.RemoveKey(purgedModule.Id);
+            modules.Remove(purgedModule.Id);
             await purgedModule.DisposeAsync();
         }
     }
