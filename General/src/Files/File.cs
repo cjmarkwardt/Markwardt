@@ -31,7 +31,7 @@ public static class FileExtensions
     public static async ValueTask<Failable> Write(this IFile file, FileOpenMode mode, ReadOnlyMemory<byte> data, CancellationToken cancellation = default)
         => await file.AsSource(mode, false).Write(data, cancellation);
 
-    public static async ValueTask<Failable> Write<T>(this IFile file, FileOpenMode mode, ISerializer<T> serializer, T data, CancellationToken cancellation = default)
+    public static async ValueTask<Failable> Write<T>(this IFile file, FileOpenMode mode, IStreamSerializer<T> serializer, T data, CancellationToken cancellation = default)
         => await file.AsSource(mode, false).Write(serializer, data, cancellation);
 
     public static async ValueTask<Failable> WriteText(this IFile file, FileOpenMode mode, bool readOnly, string text, Encoding? encoding = null, CancellationToken cancellation = default)
@@ -40,7 +40,7 @@ public static class FileExtensions
     public static async ValueTask<Failable> Append(this IFile file, ReadOnlyMemory<byte> data, CancellationToken cancellation = default)
         => await file.AsAppendSource().Write(data, cancellation);
 
-    public static async ValueTask<Failable> Append<T>(this IFile file, ISerializer<T> serializer, T data, CancellationToken cancellation = default)
+    public static async ValueTask<Failable> Append<T>(this IFile file, IStreamSerializer<T> serializer, T data, CancellationToken cancellation = default)
         => await file.AsAppendSource().Write(serializer, data, cancellation);
 
     public static async ValueTask<Failable> AppendText(this IFile file, string text, Encoding? encoding = null, CancellationToken cancellation = default)
@@ -49,7 +49,7 @@ public static class FileExtensions
     public static async ValueTask<Failable> Overwrite(this IFile file, ReadOnlyMemory<byte> data, CancellationToken cancellation = default)
         => await file.AsOverwriteSource().Write(data, cancellation);
 
-    public static async ValueTask<Failable> Overwrite<T>(this IFile file, ISerializer<T> serializer, T data, CancellationToken cancellation = default)
+    public static async ValueTask<Failable> Overwrite<T>(this IFile file, IStreamSerializer<T> serializer, T data, CancellationToken cancellation = default)
         => await file.AsOverwriteSource().Write(serializer, data, cancellation);
 
     public static async ValueTask<Failable> OverwriteText(this IFile file, string text, Encoding? encoding = null, CancellationToken cancellation = default)
@@ -58,7 +58,7 @@ public static class FileExtensions
     public static async ValueTask<Failable<byte[]>> Read(this IFile file, CancellationToken cancellation = default)
         => await file.AsReadSource().Read(cancellation);
 
-    public static async ValueTask<Failable<T>> Read<T>(this IFile file, IDeserializer<T> deserializer, CancellationToken cancellation = default)
+    public static async ValueTask<Failable<T>> Read<T>(this IFile file, IStreamDeserializer<T> deserializer, CancellationToken cancellation = default)
         => await file.AsReadSource().Read(deserializer, cancellation);
 
     public static async ValueTask<Failable<string>> ReadText(this IFile file, Encoding? encoding = null, CancellationToken cancellation = default)

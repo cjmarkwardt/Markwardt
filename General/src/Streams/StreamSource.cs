@@ -43,7 +43,7 @@ public static class StreamSourceExtensions
     public static async ValueTask<Failable> Write(this IStreamSource source, ReadOnlyMemory<byte> data, CancellationToken cancellation = default)
         => await source.Operate(async (stream, _) => await Failable.GuardAsync(async () => await stream.WriteAsync(data, cancellation)), cancellation);
 
-    public static async ValueTask<Failable> Write<T>(this IStreamSource source, ISerializer<T> serializer, T data, CancellationToken cancellation = default)
+    public static async ValueTask<Failable> Write<T>(this IStreamSource source, IStreamSerializer<T> serializer, T data, CancellationToken cancellation = default)
         => await source.Operate(async (stream, _) => await serializer.Serialize(data, stream, cancellation), cancellation);
 
     public static async ValueTask<Failable> WriteText(this IStreamSource source, string text, Encoding? encoding = null, CancellationToken cancellation = default)
@@ -52,7 +52,7 @@ public static class StreamSourceExtensions
     public static async ValueTask<Failable<byte[]>> Read(this IStreamSource source, CancellationToken cancellation = default)
         => await source.Operate(async (stream, _) => await stream.CopyToArray(cancellation), cancellation);
 
-    public static async ValueTask<Failable<T>> Read<T>(this IStreamSource source, IDeserializer<T> deserializer, CancellationToken cancellation = default)
+    public static async ValueTask<Failable<T>> Read<T>(this IStreamSource source, IStreamDeserializer<T> deserializer, CancellationToken cancellation = default)
         => await source.Operate(async (stream, _) => await deserializer.Deserialize(stream, cancellation), cancellation);
 
     public static async ValueTask<Failable<string>> ReadText(this IStreamSource source, Encoding? encoding = null, CancellationToken cancellation = default)

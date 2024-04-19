@@ -12,10 +12,10 @@ public static class ExtendedDisposableExtensions
 
         if (!disposer.IsDisposed)
         {
-            disposer.IsDisposed = true;
             disposer.Preparations.InvokeAll();
+            disposer.IsDisposed = true;
 
-            disposable.SetDisposalParent(null);
+            ClearDisposalParent(disposable);
 
             disposer.TokenSource.Cancel();
             disposer.TokenSource.Dispose();
@@ -33,10 +33,10 @@ public static class ExtendedDisposableExtensions
 
         if (!disposer.IsDisposed)
         {
-            disposer.IsDisposed = true;
             disposer.Preparations.InvokeAll();
+            disposer.IsDisposed = true;
 
-            disposable.SetDisposalParent(null);
+            ClearDisposalParent(disposable);
 
             await disposer.TokenSource.CancelAsync();
             disposer.TokenSource.Dispose();
@@ -63,18 +63,11 @@ public static class ExtendedDisposableExtensions
 
     public static void SetDisposalParent(this IExtendedDisposable disposable, IExtendedDisposable? parent)
     {
-        Disposer disposer = GetDisposer(disposable, true);
-
-        if (disposer.Parent is not null)
-        {
-            GetDisposer(disposer.Parent, false).Children.Remove(disposable);
-        }
-
-        disposer.Parent = null;
+        ClearDisposalParent(disposable);
 
         if (parent is not null)
         {
-            disposer.Parent = parent;
+            GetDisposer(disposable, true).Parent = parent;
             GetDisposer(parent, true).Children.Add(disposable);
         }
     }
@@ -153,7 +146,7 @@ public static class ExtendedDisposableExtensions
         });
     }
     
-    public static IDisposable RunInBackground(this IExtendedDisposable disposable, AsyncAction<IDisposable> action, IEnumerable<string>? logCategory = null, object? logSource = null, [CallerFilePath] string? logLocationPath = null, [CallerLineNumber] int logLocationLine = -1)
+    public static IDisposable RunInBackground(this IExtendedDisposable disposable, Func<IDisposable, CancellationToken, ValueTask> action)
     {
         disposable.VerifyUndisposed();
 
@@ -162,17 +155,21 @@ public static class ExtendedDisposableExtensions
             CancellationTokenSource linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellation, disposable.GetDisposalToken());
             try
             {
-                return await action(cancel, linkedCancellation.Token);
+                await action(cancel, linkedCancellation.Token);
             }
             finally
             {
                 linkedCancellation.Dispose();
             }
-        }, logCategory, logSource, logLocationPath, logLocationLine);
+        });
     }
 
+    public static IDisposable RunInBackground(this IExtendedDisposable disposable, Func<CancellationToken, ValueTask> action)
+        => disposable.RunInBackground(async (_, cancellation) => await action(cancellation));
+
     public static void DisposeInBackground(this IExtendedDisposable disposable, object? target)
-        => disposable.RunInBackground(async (_, _) =>
+    {
+        disposable.RunInBackground(async (_, _) =>
         {
             if (target is IAsyncDisposable targetAsyncDisposable)
             {
@@ -182,31 +179,32 @@ public static class ExtendedDisposableExtensions
             {
                 targetDisposable.Dispose();
             }
-
-            return Failable.Success();
         });
 
-    public static IDisposable LoopInBackground(this IExtendedDisposable disposable, TimeSpan? interval, AsyncAction<IDisposable> action)
+        target.DisposeWithout(disposable);
+    }
+
+    public static IDisposable LoopInBackground(this IExtendedDisposable disposable, TimeSpan? interval, Func<IDisposable, CancellationToken, ValueTask> action)
         => disposable.RunInBackground(async (cancel, cancellation) =>
         {
             while (!cancellation.IsCancellationRequested)
             {
-                Failable tryAction = await action(cancel, cancellation);
-                if (tryAction.IsFailure())
-                {
-                    return tryAction;
-                }
+                await action(cancel, cancellation);
 
                 if (interval is not null)
                 {
                     await TaskExtensions.TryDelay(interval.Value, cancellation);
                 }
             }
-
-            return Failable.Success();
         });
 
-    public static IDisposable LoopInBackground(this IExtendedDisposable disposable, AsyncAction<IDisposable> action)
+    public static IDisposable LoopInBackground(this IExtendedDisposable disposable, Func<IDisposable, CancellationToken, ValueTask> action)
+        => disposable.LoopInBackground(null, action);
+
+    public static IDisposable LoopInBackground(this IExtendedDisposable disposable, TimeSpan? interval, Func<CancellationToken, ValueTask> action)
+        => disposable.LoopInBackground(interval, async (_, cancellation) => await action(cancellation));
+
+    public static IDisposable LoopInBackground(this IExtendedDisposable disposable, Func<CancellationToken, ValueTask> action)
         => disposable.LoopInBackground(null, action);
 
     private static Disposer GetDisposer(IExtendedDisposable disposable, bool verify)
@@ -217,6 +215,18 @@ public static class ExtendedDisposableExtensions
         }
 
         return disposers.GetOrCreateValue(disposable);
+    }
+
+    private static void ClearDisposalParent(IExtendedDisposable disposable)
+    {
+        Disposer disposer = GetDisposer(disposable, false);
+
+        if (disposer.Parent is not null)
+        {
+            GetDisposer(disposer.Parent, false).Children.Remove(disposable);
+        }
+
+        disposer.Parent = null;
     }
 
     private sealed class Disposer

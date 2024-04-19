@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugins", "Plugins\Plugins.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sandbox", "Sandbox\Sandbox.csproj", "{03BA02EE-3FE5-4506-8448-7541314DB718}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Markwardt.LiteNet", "Markwardt.LiteNet\Markwardt.LiteNet.csproj", "{33436E24-2920-43CC-BAC7-E08C9960B5D3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Markwardt.Steamworks", "Markwardt.Steamworks\Markwardt.Steamworks.csproj", "{251D1CE0-42AC-432E-8742-7FA7AC590394}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,5 +52,13 @@ Global
 		{03BA02EE-3FE5-4506-8448-7541314DB718}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{03BA02EE-3FE5-4506-8448-7541314DB718}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{03BA02EE-3FE5-4506-8448-7541314DB718}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33436E24-2920-43CC-BAC7-E08C9960B5D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33436E24-2920-43CC-BAC7-E08C9960B5D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33436E24-2920-43CC-BAC7-E08C9960B5D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33436E24-2920-43CC-BAC7-E08C9960B5D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{251D1CE0-42AC-432E-8742-7FA7AC590394}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{251D1CE0-42AC-432E-8742-7FA7AC590394}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{251D1CE0-42AC-432E-8742-7FA7AC590394}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{251D1CE0-42AC-432E-8742-7FA7AC590394}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

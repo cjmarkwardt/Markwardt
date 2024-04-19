@@ -27,7 +27,7 @@ public static class LoggingExtensions
     public static IDisposable RouteLogsTo(this object target, object destination)
         => target.ObserveLogs().Subscribe(x => destination.Log(x.AddSource(destination)));
 
-    public static IDisposable Fork(this object target, AsyncAction<IDisposable> action, IEnumerable<string>? logCategory = null, object? logSource = null, [CallerFilePath] string? logLocationPath = null, [CallerLineNumber] int logLocationLine = -1)
+    public static IDisposable Fork(this object target, Func<IDisposable, CancellationToken, ValueTask> action)
     {
         CancellationTokenSource cancellation = new();
         IDisposable cancel = Disposable.Create(cancellation.Cancel);
@@ -36,7 +36,7 @@ public static class LoggingExtensions
         {
             try
             {
-                (await action(cancel, cancellation.Token)).WithLogging(target, null, null, logCategory, logSource, logLocationPath, logLocationLine);
+                await action(cancel, cancellation.Token);
             }
             catch (Exception exception)
             {

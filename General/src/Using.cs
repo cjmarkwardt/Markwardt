@@ -6,11 +6,14 @@ global using System.Collections.ObjectModel;
 global using System.Collections.Specialized;
 global using System.Reactive.Subjects;
 global using System.Runtime.CompilerServices;
+global using System.Runtime.InteropServices;
 global using System.ComponentModel;
 global using System.Text;
 global using System.Numerics;
 global using System.Reactive.Linq;
 global using System.Reactive.Disposables;
+global using System.Net.Sockets;
+global using System.Net;
 
 global using ReactiveUI;
 

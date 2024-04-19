@@ -95,6 +95,13 @@ public class ObservableList<T> : ObservableReadOnlyList<T>, IObservableList<T>, 
     public void RemoveAt(int index)
         => Edit(x => x.RemoveAt(index));
 
+    public void ReplaceAll(IEnumerable<T> items)
+        => Edit(x =>
+        {
+            x.Clear();
+            x.Add(items);
+        });
+
     int IList.Add(object? value)
     {
         if (value is T casted)
