@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Markwardt.LiteNet", "Markwa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Markwardt.Steamworks", "Markwardt.Steamworks\Markwardt.Steamworks.csproj", "{251D1CE0-42AC-432E-8742-7FA7AC590394}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Godot", "Godot\Godot.csproj", "{55111DD5-DF1B-45F8-AF7B-050FEBA87668}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,5 +62,9 @@ Global
 		{251D1CE0-42AC-432E-8742-7FA7AC590394}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{251D1CE0-42AC-432E-8742-7FA7AC590394}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{251D1CE0-42AC-432E-8742-7FA7AC590394}.Release|Any CPU.Build.0 = Release|Any CPU
+		{55111DD5-DF1B-45F8-AF7B-050FEBA87668}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{55111DD5-DF1B-45F8-AF7B-050FEBA87668}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{55111DD5-DF1B-45F8-AF7B-050FEBA87668}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{55111DD5-DF1B-45F8-AF7B-050FEBA87668}.Release|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 EndGlobal
