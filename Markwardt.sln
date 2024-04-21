@@ -3,23 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{45F7B243-48AF-47BF-96BD-2F4B2CA6C3A5}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataObjects", "DataObjects\DataObjects.csproj", "{0BCAE050-2BB6-48D6-BAD5-2D6CFD1760A3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataObjects.LiteDb", "DataObjects.LiteDb\DataObjects.LiteDb.csproj", "{055B71EE-ADD0-4FAC-BD2D-44D77B558E39}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "General", "General\General.csproj", "{474FD75A-09AA-4D48-8425-ECCF2804859C}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugins", "Plugins\Plugins.csproj", "{A152FDE4-985C-4012-A552-EA2AB11BA630}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Core\Core.csproj", "{474FD75A-09AA-4D48-8425-ECCF2804859C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sandbox", "Sandbox\Sandbox.csproj", "{03BA02EE-3FE5-4506-8448-7541314DB718}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Markwardt.LiteNet", "Markwardt.LiteNet\Markwardt.LiteNet.csproj", "{33436E24-2920-43CC-BAC7-E08C9960B5D3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{45F7B243-48AF-47BF-96BD-2F4B2CA6C3A5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Markwardt.Steamworks", "Markwardt.Steamworks\Markwardt.Steamworks.csproj", "{251D1CE0-42AC-432E-8742-7FA7AC590394}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiteDb", "Adapters\LiteDb\LiteDb.csproj", "{055B71EE-ADD0-4FAC-BD2D-44D77B558E39}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Godot", "Godot\Godot.csproj", "{55111DD5-DF1B-45F8-AF7B-050FEBA87668}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plugins", "Adapters\McMasterPlugins\McMasterPlugins.csproj", "{A152FDE4-985C-4012-A552-EA2AB11BA630}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LiteNet", "Adapters\LiteNet\LiteNet.csproj", "{33436E24-2920-43CC-BAC7-E08C9960B5D3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Steamworks", "Adapters\Steamworks\Steamworks.csproj", "{251D1CE0-42AC-432E-8742-7FA7AC590394}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Godot", "Adapters\Godot\Godot.csproj", "{55111DD5-DF1B-45F8-AF7B-050FEBA87668}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,10 +32,6 @@ Global
 		{45F7B243-48AF-47BF-96BD-2F4B2CA6C3A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{45F7B243-48AF-47BF-96BD-2F4B2CA6C3A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{45F7B243-48AF-47BF-96BD-2F4B2CA6C3A5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0BCAE050-2BB6-48D6-BAD5-2D6CFD1760A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0BCAE050-2BB6-48D6-BAD5-2D6CFD1760A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0BCAE050-2BB6-48D6-BAD5-2D6CFD1760A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0BCAE050-2BB6-48D6-BAD5-2D6CFD1760A3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{055B71EE-ADD0-4FAC-BD2D-44D77B558E39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{055B71EE-ADD0-4FAC-BD2D-44D77B558E39}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{055B71EE-ADD0-4FAC-BD2D-44D77B558E39}.Release|Any CPU.ActiveCfg = Release|Any CPU

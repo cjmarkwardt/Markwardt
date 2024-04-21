@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\General\General.csproj" />
-    <ProjectReference Include="..\Markwardt.LiteNet\Markwardt.LiteNet.csproj" />
-    <ProjectReference Include="..\Markwardt.Steamworks\Markwardt.Steamworks.csproj" />
+    <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\Adapters\LiteNet\LiteNet.csproj" />
+    <ProjectReference Include="..\Adapters\\Steamworks\Steamworks.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
