@@ -1,11 +1,21 @@
 namespace Markwardt;
 
-public abstract partial class InjectableNode3d : Node3D, IInjectable, IExtendedDisposable
+public abstract partial class InjectableNode3d : Node3D, IInjectable, IExtendedDisposable, INode
 {
     protected InjectableNode3d()
         => injector = new(this);
 
     private readonly Injector<InjectableNode3d> injector;
+
+    public IScene? Parent => this.Generalize().Parent;
+
+    public IEnumerable<INode> Children => this.Generalize().Children;
+
+    public void Add(INode child)
+        => this.Generalize().Add(child);
+
+    public void Remove(INode child)
+        => this.Generalize().Remove(child);
 
     public override sealed void _Ready()
         => injector.Ready();

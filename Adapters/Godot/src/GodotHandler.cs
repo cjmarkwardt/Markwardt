@@ -6,7 +6,7 @@ public class GodotHandler : IServiceHandler
     {
         if (key is Type type && type.TryGetCustomAttribute(out NodeServiceAttribute? nodeAttribute))
         {
-            return Service.FromDelegate(ServiceKind.Singleton, async services => (await services.RequireDefault<INodeTree>()).Descend(nodeAttribute.Path ?? $"Game/{type.Name[1..]}"));
+            return Service.FromDelegate(ServiceKind.Singleton, async services => (await services.RequireDefault<INodeFinder>()).Find(nodeAttribute.Path ?? $"Game/{type.Name[1..]}"));
         }
 
         return null;

@@ -7,7 +7,8 @@ public abstract partial class GodotInitiator : Node3D
         base._Ready();
         
         IServiceContainer services = CreateContainer();
-        services.Configure(typeof(INodeTree), Service.FromInstance(true, new NodeTree(GetTree().Root)));
+        services.Configure(typeof(IScene), Service.FromInstance(true, GetTree().Root.Generalize()));
+        services.Configure(typeof(INodeFinder), Service.FromInstance(true, new GodotNodeFinder(GetTree().Root)));
         (await services.RequireTag<GlobalLoggersTag, IList<object>>()).Add(await services.Create<GodotLogger>());
         Configure(services);
         GlobalServices.Initialize(services);

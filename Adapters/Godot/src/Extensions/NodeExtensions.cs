@@ -2,6 +2,9 @@ namespace Markwardt;
 
 public static class NodeExtensions
 {
+    public static INode Generalize(this Node node)
+        => node is INode casted ? casted : new GodotNode(node);
+
     public static void AddChildDeferred(this Node node, Node child)
         => node.CallDeferred("add_child", child);
     

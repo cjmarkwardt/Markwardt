@@ -1,11 +1,21 @@
 namespace Markwardt;
 
-public abstract partial class InjectableControl : Control, IInjectable, IExtendedDisposable
+public abstract partial class InjectableControl : Control, IInjectable, IExtendedDisposable, INode
 {
     protected InjectableControl()
         => injector = new(this);
 
     private readonly Injector<InjectableControl> injector;
+
+    public IScene? Parent => this.Generalize().Parent;
+
+    public IEnumerable<INode> Children => this.Generalize().Children;
+
+    public void Add(INode child)
+        => this.Generalize().Add(child);
+
+    public void Remove(INode child)
+        => this.Generalize().Remove(child);
 
     public override sealed void _Ready()
         => injector.Ready();
