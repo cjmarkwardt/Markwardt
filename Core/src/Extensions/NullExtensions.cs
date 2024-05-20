@@ -2,6 +2,9 @@ namespace Markwardt;
 
 public static class NullExtensions
 {
+    public static bool NullableEquals(this object? x, object? y)
+        => (x is null && y is null) || (x is not null && x.Equals(y));
+
     public static T NotNull<T>(this T? obj, string? message = null)
         where T : class
         => obj ?? throw new InvalidOperationException(message ?? "Value is null");

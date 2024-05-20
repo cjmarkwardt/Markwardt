@@ -5,6 +5,9 @@ public static class EnumerableExtensions
     public static bool None<T>(this IEnumerable<T> items)
         => !items.Any();
 
+    public static IEnumerable<TSelected> SelectMaybe<T, TSelected>(this IEnumerable<T> items, Func<T, Maybe<TSelected>> select)
+        => items.Select(x => select(x)).Where(x => x.HasValue).Select(x => x.Value);
+
     public static bool MinSequenceEqual<T>(this IEnumerable<T> items, IEnumerable<T> other, IEqualityComparer<T>? comparer = null)
     {
         comparer ??= EqualityComparer<T>.Default;
