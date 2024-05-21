@@ -2,7 +2,7 @@ namespace Markwardt;
 
 public interface IEntity : IEquatable<IEntity>
 {
-    string Id { get; }
+    EntityId Id { get; }
 
     IEnumerable<string> Flags { get; }
     IEnumerable<string> Sections { get; }

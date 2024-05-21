@@ -73,7 +73,7 @@ public class DataList(IEnumerable<IDataNode> nodes) : IList<IDataNode>, IDataNod
     }
 
     public int RemoveAll(IDataNode item)
-        => nodes.RemoveAll(x => item == x);
+        => nodes.RemoveAll(x => x.Equals(item));
 
     public void ReplaceAll(IEnumerable<IDataNode> items)
     {

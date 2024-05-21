@@ -9,7 +9,7 @@ public sealed class DataEntity(string id, IDataSegmentTyper segmentTyper, IDataH
 {
     private readonly IModel model = data.AsSegment<IModel>(segmentTyper, handler);
 
-    public string Id => id;
+    public EntityId Id => new(id);
     public DataDictionary Data => data;
 
     public IEnumerable<string> Flags => model.Flags;

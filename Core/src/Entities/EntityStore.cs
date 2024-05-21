@@ -5,8 +5,15 @@ public interface IEntityStore : IEntityLoader, IMultiDisposable
     [Factory<EntityStore>]
     delegate ValueTask<IEntityStore> Factory(IDataStore store, IEntityExpirationCalculator? expirationCalculator = null);
 
+    EntityId GetId(string id);
     IEntityClaim Create(string? id = null);
     ValueTask Save();
+}
+
+public static class EntityStoreExtensions
+{
+    public static async ValueTask<IEntityClaim> Load(this IEntityStore store, string id)
+        => await store.Load(store.GetId(id));
 }
 
 public class EntityStore : ExtendedDisposable, IEntityStore
@@ -33,17 +40,20 @@ public class EntityStore : ExtendedDisposable, IEntityStore
     private readonly SequentialExecutor saveExecutor = new();
     private readonly Dictionary<string, IEntityHandle> handles = [];
 
+    public EntityId GetId(string id)
+        => new(idCreator.Create(id));
+
     public IEntityClaim Create(string? id = null)
     {
         (EntityHandle handle, EntityClaim claim) = EntityHandle.NewEntity(new DataEntity(idCreator.Create(id), segmentTyper, handler, []), expirationCalculator);
-        handles.Add(claim.Id, handle);
+        handles.Add(claim.Id.Value, handle);
         return claim;
     }
 
-    public async ValueTask<IEnumerable<IEntityClaim>> Load(IEnumerable<string> ids)
+    public async ValueTask<IEnumerable<IEntityClaim>> Load(IEnumerable<EntityId> ids)
     {
-        IReadOnlyDictionary<string, TaskCompletionSource<IDataEntity>> loadCompletions = ids.Where(x => !handles.ContainsKey(x)).ToDictionary(x => x, _ => new TaskCompletionSource<IDataEntity>());
-        IReadOnlyList<IEntityHandle> targetHandles = ids.Select(x => GetHandle(x, async () => await loadCompletions[x].Task)).ToList();
+        IReadOnlyDictionary<string, TaskCompletionSource<IDataEntity>> loadCompletions = ids.Where(x => !handles.ContainsKey(x.Value)).ToDictionary(x => x.Value, _ => new TaskCompletionSource<IDataEntity>());
+        IReadOnlyList<IEntityHandle> targetHandles = ids.Select(x => GetHandle(x.Value, async () => await loadCompletions[x.Value].Task)).ToList();
 
         foreach (KeyValuePair<string, DataDictionary> loadedEntity in await store.Load(loadCompletions.Keys))
         {
@@ -85,5 +95,5 @@ public class EntityStore : ExtendedDisposable, IEntityStore
     }
 
     private async ValueTask Save(IEnumerable<IEntityHandle> handles)
-        => await store.Save(handles.SelectMaybe(x => x.PopChanged()).Select(x => new KeyValuePair<string, DataDictionary>(x.Id, x.Data)));
+        => await store.Save(handles.SelectMaybe(x => x.PopChanged()).Select(x => new KeyValuePair<string, DataDictionary>(x.Id.Value, x.Data)));
 }

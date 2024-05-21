@@ -6,7 +6,7 @@ public sealed class EntityClaim(IEntity entity, Action dispose) : IEntityClaim
 {
     private bool isDisposed;
 
-    public string Id => entity.Id;
+    public EntityId Id => entity.Id;
 
     public IEnumerable<string> Flags => GetEntity().Flags;
     public IEnumerable<string> Sections => GetEntity().Sections;

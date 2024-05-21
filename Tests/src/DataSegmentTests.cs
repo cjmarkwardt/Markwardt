@@ -12,6 +12,7 @@ public class DataSegmentTests
         Assert.Null(test.ValueB);
         Assert.Null(test.ValueC);
         Assert.Equal(0, test.List.Count);
+        Assert.Equal(0, test.Set.Count);
         Assert.Equal(0, test.Dictionary.Count);
         Assert.False(test.MainSub.HasValue);
         Assert.Equal(0, test.Subs.Count);
@@ -22,6 +23,9 @@ public class DataSegmentTests
         test.ValueC = new DateTime(50000, DateTimeKind.Local);
         test.List.Add(5.5f);
         test.List.Add(1);
+        test.Set.Add("test1");
+        test.Set.Add("test1");
+        test.Set.Add("test2");
         test.Dictionary.Add(2, "test1");
         test.Dictionary.Add(4, "test2");
         test.Dictionary.Add(5, "test3");
@@ -37,6 +41,8 @@ public class DataSegmentTests
         Assert.Equal(2, test.List.Count);
         Assert.Equal(5.5f, test.List[0]);
         Assert.Equal(1, test.List[1]);
+        Assert.Equal(2, test.Set.Count);
+        Assert.True(test.Set.SetEquals(["test2", "test1"]));
         Assert.Equal(3, test.Dictionary.Count);
         Assert.Equal("test1", test.Dictionary[2]);
         Assert.Equal("test2", test.Dictionary[4]);
@@ -80,6 +86,7 @@ public class DataSegmentTests
         test.ValueA = null;
         test.ValueB = null;
         test.List.Clear();
+        test.Set.Clear();
         test.Dictionary.Clear();
         test.MainSub.Clear();
         test.Subs.Clear();
@@ -88,6 +95,7 @@ public class DataSegmentTests
         Assert.Null(test.ValueB);
         Assert.NotNull(test.ValueC);
         Assert.Equal(0, test.List.Count);
+        Assert.Equal(0, test.Set.Count);
         Assert.Equal(0, test.Dictionary.Count);
         Assert.False(test.MainSub.HasValue);
         Assert.Equal(0, test.Subs.Count);
@@ -96,46 +104,47 @@ public class DataSegmentTests
     [Segment("Test")]
     public interface ITestSegment
     {
-        public string? ValueA { get; set; }
-        public int? ValueB { get; set; }
-        public DateTime? ValueC { get; set; }
+        string? ValueA { get; set; }
+        int? ValueB { get; set; }
+        DateTime? ValueC { get; set; }
 
-        public IList<float> List { get; }
-        public IDictionary<int, string> Dictionary { get; }
+        IList<float> List { get; }
+        ISet<string> Set { get; }
+        IDictionary<int, string> Dictionary { get; }
 
-        public ISegmentSlot<ISubSegment> MainSub { get; }
-        public ISegmentDictionary<string, ISubSegment> Subs { get; }
-        public ISegmentList<object> Other { get; }
+        ISegmentSlot<ISubSegment> MainSub { get; }
+        ISegmentDictionary<string, ISubSegment> Subs { get; }
+        ISegmentList<object> Other { get; }
     }
 
     [Segment("Sub")]
     public interface ISubSegment
     {
-        public string? Name { get; set; }
+        string? Name { get; set; }
     }
 
     [Segment("Sub1")]
     public interface ISubSegment1 : ISubSegment
     {
-        public byte? Value { get; set; }
+        byte? Value { get; set; }
     }
 
     [Segment("Sub1A")]
     public interface ISubSegment1A : ISubSegment1
     {
-        public IList<string> List { get; }
+        IList<string> List { get; }
     }
 
     [Segment("Sub1B")]
     public interface ISubSegment1B : ISubSegment1
     {
-        public ISegmentSlot<ITestSegment> Test { get; }
-        public ISegmentDictionary<long, ISubSegment1> Subs { get; }
+        ISegmentSlot<ITestSegment> Test { get; }
+        ISegmentDictionary<long, ISubSegment1> Subs { get; }
     }
 
     [Segment("Sub2")]
     public interface ISubSegment2 : ISubSegment
     {
-        public ISegmentList<ISubSegment> Subs { get; }
+        ISegmentList<ISubSegment> Subs { get; }
     }
 }
