@@ -4,10 +4,6 @@ public class DataSegment(IDataSegmentTyper segmentTyper, IDataHandler handler, D
 {
     private readonly Dictionary<string, object?> wrappers = [];
 
-    public static T Adapt<T>(IDataSegmentTyper segmentTyper, IDataHandler handler, DataDictionary data)
-        where T : class
-        => Impromptu.ActLike<T>(new DataSegment(segmentTyper, handler, data, typeof(T)));
-
     public override bool TryGetMember(GetMemberBinder binder, out object? result)
     {
         string name = binder.Name;

@@ -4,5 +4,5 @@ public class DataSegmentReader<T>(IDataSegmentTyper segmentTyper, IDataHandler h
 {
     public TDerived Read<TDerived>(IDataNode node)
         where TDerived : class, T
-        => segmentTyper.Is(node, typeof(TDerived)) ? DataSegment.Adapt<TDerived>(segmentTyper, handler, node.AsDictionary().NotNull()) : throw new InvalidOperationException($"Data segment is not of type {typeof(TDerived)}");
+        => segmentTyper.Is(node, typeof(TDerived)) ? node.AsDictionary().NotNull().AsSegment<TDerived>(segmentTyper, handler) : throw new InvalidOperationException($"Data segment is not of type {typeof(TDerived)}");
 }

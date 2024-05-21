@@ -34,7 +34,7 @@ public sealed class DataEntity(string id, IDataSegmentTyper segmentTyper, IDataH
             data.Add(GetSectionName<T>(), dictionary);
         }
 
-        return DataSegment.Adapt<T>(segmentTyper, handler, dictionary);
+        return dictionary.AsSegment<T>(segmentTyper, handler);
     }
 
     public bool Equals(IEntity? other)

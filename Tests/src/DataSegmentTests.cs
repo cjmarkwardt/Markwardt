@@ -6,7 +6,7 @@ public class DataSegmentTests
     public void Test()
     {
         TypeSetSource types = new([typeof(ITestSegment), typeof(ISubSegment), typeof(ISubSegment1), typeof(ISubSegment1A), typeof(ISubSegment1B), typeof(ISubSegment2)]);
-        ITestSegment test = DataSegment.Adapt<ITestSegment>(new DataSegmentTyper() { Types = types }, new DataHandler(), []);
+        ITestSegment test = new DataDictionary().AsSegment<ITestSegment>(new DataSegmentTyper() { Types = types }, new DataHandler());
 
         Assert.Null(test.ValueA);
         Assert.Null(test.ValueB);
@@ -15,6 +15,7 @@ public class DataSegmentTests
         Assert.Equal(0, test.Dictionary.Count);
         Assert.False(test.MainSub.HasValue);
         Assert.Equal(0, test.Subs.Count);
+        Assert.Equal(0, test.Other.Count);
 
         test.ValueA = "test";
         test.ValueB = 50;
@@ -28,6 +29,7 @@ public class DataSegmentTests
         ISubSegment1A sub1 = test.Subs.Add<ISubSegment1A>("key1");
         ISubSegment1B sub2 = test.Subs.Add<ISubSegment1B>("key2");
         ISubSegment2 sub3 = test.Subs.Add<ISubSegment2>("key3");
+        test.Other.Add<ISubSegment>().Name = "blah";
 
         Assert.Equal("test", test.ValueA);
         Assert.Equal(50, test.ValueB);
@@ -45,6 +47,10 @@ public class DataSegmentTests
         Assert.NotNull(test.Subs.Get<ISubSegment1A>("key1"));
         Assert.NotNull(test.Subs.Get<ISubSegment1B>("key2"));
         Assert.NotNull(test.Subs.Get<ISubSegment2>("key3"));
+        Assert.Equal("blah", test.Other.Get<ISubSegment>(0).Name);
+        Assert.True(test.Other.Is<ISubSegment>(0));
+        Assert.False(test.Other.Is<ISubSegment1A>(0));
+        Assert.True(test.Other.Is<object>(0));
 
         mainSub.Name = "mainSub";
         sub1.Name = "sub1";
@@ -99,6 +105,7 @@ public class DataSegmentTests
 
         public ISegmentSlot<ISubSegment> MainSub { get; }
         public ISegmentDictionary<string, ISubSegment> Subs { get; }
+        public ISegmentList<object> Other { get; }
     }
 
     [Segment("Sub")]
