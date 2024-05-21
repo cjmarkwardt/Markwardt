@@ -13,6 +13,8 @@ public interface ISegmentDictionary<TKey, T> : IEnumerable<KeyValuePair<TKey, T>
 
     IEnumerable<TKey> Keys { get; }
 
+    bool ContainsKey(TKey key);
+
     bool TryGetValue<TDerived>(TKey key, [MaybeNullWhen(false)] out TDerived value)
         where TDerived : class, T;
 
@@ -20,6 +22,9 @@ public interface ISegmentDictionary<TKey, T> : IEnumerable<KeyValuePair<TKey, T>
         where TDerived : class, T;
     
     TDerived Add<TDerived>(TKey key)
+        where TDerived : class, T;
+    
+    TDerived GetOrAdd<TDerived>(TKey key)
         where TDerived : class, T;
 
     void Remove(TKey key);
@@ -40,6 +45,10 @@ public static class SegmentDictionaryExtensions
     public static T Add<TKey, T>(this ISegmentDictionary<TKey, T> dictionary, TKey key)
         where T : class
         => dictionary.Add<T>(key);
+
+    public static T GetOrAdd<TKey, T>(this ISegmentDictionary<TKey, T> dictionary, TKey key)
+        where T : class
+        => dictionary.GetOrAdd<T>(key);
 }
 
 public class SegmentDictionary<TKey, T>(IDataSegmentTyper segmentTyper, IDataHandler handler, DataDictionary data) : ISegmentDictionary<TKey, T>
@@ -50,6 +59,9 @@ public class SegmentDictionary<TKey, T>(IDataSegmentTyper segmentTyper, IDataHan
 
     public int Count => data.Count;
     public IEnumerable<TKey> Keys => data.Keys.Select(keyReader.Read);
+
+    public bool ContainsKey(TKey key)
+        => data.ContainsKey(keyReader.Write(key));
 
     public bool TryGetValue<TDerived>(TKey key, [MaybeNullWhen(false)] out TDerived value)
         where TDerived : class, T
@@ -75,6 +87,10 @@ public class SegmentDictionary<TKey, T>(IDataSegmentTyper segmentTyper, IDataHan
         data.Add(keyReader.Write(key), segmentData);
         return itemReader.Read<TDerived>(segmentData);
     }
+
+    public TDerived GetOrAdd<TDerived>(TKey key)
+        where TDerived : class, T
+        => TryGetValue<TDerived>(key, out TDerived? value) ? value : Add<TDerived>(key);
 
     public void Remove(TKey key)
         => data.Remove(keyReader.Write(key));

@@ -92,6 +92,14 @@ public class DataSegment(IDataSegmentTyper segmentTyper, IDataHandler handler, D
                 return SegmentValueList.Create(item.Type, handler, GetList(name));
             }
         }
+        else if (property.Type.HasGenericTypeDefinition(typeof(ISet<>)))
+        {
+            ITypeDescription item = property.Parameters.First();
+            if (!item.IsNullable)
+            {
+                return SegmentValueSet.Create(item.Type, handler, GetList(name));
+            }
+        }
         else if (property.Type.HasGenericTypeDefinition(typeof(IDictionary<,>)))
         {
             ITypeDescription key = property.Parameters.ElementAt(0);

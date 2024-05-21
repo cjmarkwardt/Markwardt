@@ -7,35 +7,34 @@ public interface IDataEntity : IEntity
 
 public sealed class DataEntity(string id, IDataSegmentTyper segmentTyper, IDataHandler handler, DataDictionary data) : IDataEntity
 {
+    private readonly IModel model = data.AsSegment<IModel>(segmentTyper, handler);
+
     public string Id => id;
     public DataDictionary Data => data;
 
+    public IEnumerable<string> Flags => model.Flags;
     public IEnumerable<string> Sections => data.Keys;
+
+    public bool HasFlag(string flag)
+        => model.Flags.Contains(flag);
+
+    public void SetFlag(string flag)
+        => model.Flags.Add(flag);
+
+    public void ClearFlag(string flag)
+        => model.Flags.Remove(flag);
 
     public bool ContainsSection<T>()
         where T : class
-        => data.ContainsKey(GetSectionName<T>());
+        => model.Sections.ContainsKey(segmentTyper.GetName(typeof(T)));
 
     public void DeleteSection<T>()
         where T : class
-        => data.Remove(GetSectionName<T>());
+        => model.Sections.Remove(segmentTyper.GetName(typeof(T)));
         
     public T GetSection<T>()
         where T : class
-    {
-        DataDictionary dictionary;
-        if (ContainsSection<T>())
-        {
-            dictionary = data[GetSectionName<T>()].AsDictionary() ?? throw new InvalidOperationException();
-        }
-        else
-        {
-            dictionary = [];
-            data.Add(GetSectionName<T>(), dictionary);
-        }
-
-        return dictionary.AsSegment<T>(segmentTyper, handler);
-    }
+        => model.Sections.GetOrAdd<T>(segmentTyper.GetName(typeof(T)));
 
     public bool Equals(IEntity? other)
         => other is not null && Id == other.Id;
@@ -46,6 +45,9 @@ public sealed class DataEntity(string id, IDataSegmentTyper segmentTyper, IDataH
     public override int GetHashCode()
         => Id.GetHashCode();
 
-    private string GetSectionName<T>()
-        => typeof(T).GetCustomAttribute<SegmentAttribute>()?.Name ?? throw new InvalidOperationException($"Type {typeof(T)} is not an entity section");
+    public interface IModel
+    {
+        ISet<string> Flags { get; }
+        ISegmentDictionary<string, object> Sections { get; }
+    }
 }

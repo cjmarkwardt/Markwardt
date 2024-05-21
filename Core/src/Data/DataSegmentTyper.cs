@@ -4,6 +4,7 @@ namespace Markwardt;
 public interface IDataSegmentTyper
 {
     DataDictionary Create(Type type);
+    string GetName(Type type);
     Type GetType(IDataNode node);
     bool Is(IDataNode node, Type type);
 }
@@ -15,7 +16,10 @@ public class DataSegmentTyper : IDataSegmentTyper
     public required ITypeSource Types { get; init; }
 
     public DataDictionary Create(Type type)
-        => new() { Type = type.GetCustomAttribute<SegmentAttribute>()?.Name ?? throw new InvalidOperationException($"Type {type} is not a data segment") };
+        => new() { Type = GetName(type) };
+
+    public string GetName(Type type)
+        => type.GetCustomAttribute<SegmentAttribute>()?.Name ?? throw new InvalidOperationException($"Type {type} is not a data segment");
 
     public Type GetType(IDataNode node)
     {

@@ -8,7 +8,17 @@ public sealed class EntityClaim(IEntity entity, Action dispose) : IEntityClaim
 
     public string Id => entity.Id;
 
+    public IEnumerable<string> Flags => GetEntity().Flags;
     public IEnumerable<string> Sections => GetEntity().Sections;
+
+    public bool HasFlag(string flag)
+        => GetEntity().HasFlag(flag);
+
+    public void SetFlag(string flag)
+        => GetEntity().SetFlag(flag);
+
+    public void ClearFlag(string flag)
+        => GetEntity().ClearFlag(flag);
 
     public bool ContainsSection<T>()
         where T : class

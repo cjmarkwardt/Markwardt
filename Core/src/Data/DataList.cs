@@ -51,9 +51,6 @@ public class DataList(IEnumerable<IDataNode> nodes) : IList<IDataNode>, IDataNod
     public void CopyTo(IDataNode[] array, int arrayIndex)
         => nodes.CopyTo(array, arrayIndex);
 
-    public IEnumerator<IDataNode> GetEnumerator()
-        => nodes.GetEnumerator();
-
     public int IndexOf(IDataNode item)
         => nodes.IndexOf(item);
 
@@ -74,6 +71,18 @@ public class DataList(IEnumerable<IDataNode> nodes) : IList<IDataNode>, IDataNod
         isDirty = true;
         nodes.RemoveAt(index);
     }
+
+    public int RemoveAll(IDataNode item)
+        => nodes.RemoveAll(x => item == x);
+
+    public void ReplaceAll(IEnumerable<IDataNode> items)
+    {
+        nodes.Clear();
+        nodes.AddRange(items);
+    }
+
+    public IEnumerator<IDataNode> GetEnumerator()
+        => nodes.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
