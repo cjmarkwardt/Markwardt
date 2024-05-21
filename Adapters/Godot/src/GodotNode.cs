@@ -2,29 +2,17 @@ namespace Markwardt;
 
 public class GodotNode(Node node) : ExtendedDisposable, INode
 {
-    public IEnumerable<INode> Children => node.GetChildren().Select(x => x.Generalize());
+    private readonly Node node = node;
 
-    public IScene? Parent => node.GetParent()?.Generalize();
+    public IEnumerable<object> Children => node.GetChildren().Select(x => x.Generalize());
 
-    public void Add(INode child)
-    {
-        if (child is Node childNode)
-        {
-            node.AddChildDeferred(childNode);
-        }
-        else
-        {
-            throw new InvalidOperationException("Child must be of type Godot.Node");
-        }
-    }
+    public object? Parent { get => node.GetParent()?.Generalize(); set => node.Reparent(GetNode(value)); }
 
-    public void Remove(INode child)
-    {
-        if (child is Node childNode)
-        {
-            node.RemoveChildDeferred(childNode);
-        }
-    }
+    public void Add(object child)
+        => node.AddChildDeferred(GetNode(child));
+
+    public void Remove(object child)
+        => node.RemoveChildDeferred(GetNode(child));
 
     protected override void OnPrepareDisposal()
     {
@@ -32,4 +20,7 @@ public class GodotNode(Node node) : ExtendedDisposable, INode
 
         node.DisposeWith(this);
     }
+
+    private Node GetNode(object? node)
+        => node as Node ?? (node as GodotNode)?.node ?? throw new InvalidOperationException("Child must be of type Godot.Node");
 }

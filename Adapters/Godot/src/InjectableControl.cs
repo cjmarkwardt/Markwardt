@@ -7,18 +7,23 @@ public abstract partial class InjectableControl : Control, IInjectable, IExtende
 
     private readonly Injector<InjectableControl> injector;
 
-    public IScene? Parent => this.Generalize().Parent;
+	public required ITopLogger Logger { get; init; }
 
-    public IEnumerable<INode> Children => this.Generalize().Children;
+    public object? Parent { get => this.Generalize().Parent; set => this.Generalize().Parent = value; }
 
-    public void Add(INode child)
+    public IEnumerable<object> Children => this.Generalize().Children;
+
+    public void Add(object child)
         => this.Generalize().Add(child);
 
-    public void Remove(INode child)
+    public void Remove(object child)
         => this.Generalize().Remove(child);
 
     public override sealed void _Ready()
-        => injector.Ready();
+    {
+        this.RouteLogsTo(Logger);
+        injector.Ready();
+    }
 
     public override sealed void _Process(double delta)
         => injector.Process(delta);

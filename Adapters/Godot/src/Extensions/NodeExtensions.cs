@@ -5,6 +5,17 @@ public static class NodeExtensions
     public static INode Generalize(this Node node)
         => node is INode casted ? casted : new GodotNode(node);
 
+    public static void SetRootParent(this Node node)
+        => node.Reparent(GodotControl.GetRoot());
+
+    public static T? FindChild<T>(this Node node, string pattern, bool recursive = true, bool owned = true)
+        where T : Node
+        => (T?)node.FindChild(pattern, recursive, owned);
+
+    public static T RequireChild<T>(this Node node, string pattern, bool recursive = true, bool owned = true)
+        where T : Node
+        => node.FindChild<T>(pattern, recursive, owned) ?? throw new InvalidOperationException($"Child {pattern} not found in node {node.Name}");
+
     public static void AddChildDeferred(this Node node, Node child)
         => node.CallDeferred("add_child", child);
     

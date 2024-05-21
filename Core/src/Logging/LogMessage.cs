@@ -9,7 +9,6 @@ public record LogMessage(DateTime Timestamp, object Content, IEnumerable<string>
         => line < 0 ? null : line;
 
     private IEnumerable<string> SourceDisplayParts => Enumerable.Empty<string>()
-        .When(_ => Location is not null, x => x.Append(Location!.ToString()))
         .When(_ => Sources.Any(), x => x.Concat(Sources.Select(x => x is ILogIdentifiable identifiable ? identifiable.GetLogIdentifier() ?? x.GetType().Name : x.GetType().Name).WhereNotNull()));
 
     private IEnumerable<string> ToStringParts => Enumerable.Empty<string>()

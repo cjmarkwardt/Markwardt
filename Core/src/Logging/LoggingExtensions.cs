@@ -28,6 +28,9 @@ public static class LoggingExtensions
     public static IDisposable RouteLogsTo(this object target, object destination)
         => target.ObserveLogs().Subscribe(x => destination.Log(x.AddSource(destination)));
 
+    public static async ValueTask<IDisposable> RouteLogsToTop(this object target, IServiceResolver resolver)
+        => target.RouteLogsTo(await resolver.RequireDefault<ITopLogger>());
+
     public static IDisposable Fork(this object target, Func<IDisposable, CancellationToken, ValueTask> action)
     {
         CancellationTokenSource cancellation = new();

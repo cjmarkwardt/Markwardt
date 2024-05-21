@@ -1,17 +1,18 @@
 namespace Markwardt;
 
-public abstract partial class GodotInitiator : Node3D
+public abstract partial class GodotInitiator : Node
 {
     public override async void _Ready()
     {
         base._Ready();
         
         IServiceContainer services = CreateContainer();
-        services.Configure(typeof(IScene), Service.FromInstance(true, GetTree().Root.Generalize()));
-        services.Configure(typeof(INodeFinder), Service.FromInstance(true, new GodotNodeFinder(GetTree().Root)));
+        services.Configure<IScene>(Service.FromImplementation<GodotScene>(ServiceKind.Singleton));
+        services.Configure<INodeFinder>(Service.FromImplementation<GodotNodeFinder>(ServiceKind.Singleton));
         (await services.RequireTag<GlobalLoggersTag, IList<object>>()).Add(await services.Create<GodotLogger>());
         Configure(services);
         GlobalServices.Initialize(services);
+        await this.RouteLogsToTop(services);
         await Start(services);
     }
 

@@ -2,8 +2,14 @@ namespace Markwardt;
 
 public interface IScene : IMultiDisposable
 {
-    IEnumerable<INode> Children { get; }
+    IEnumerable<object> Children { get; }
 
-    void Add(INode child);
-    void Remove(INode child);
+    void Add(object child);
+    void Remove(object child);
+
+    interface IModifier
+    {
+        void AddChild(object child);
+        void RemoveChild(object child);
+    }
 }
