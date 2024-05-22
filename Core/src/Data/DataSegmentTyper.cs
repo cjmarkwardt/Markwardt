@@ -55,7 +55,23 @@ public class DataSegmentTyper : IDataSegmentTyper
         SegmentAttribute? attribute = type.GetCustomAttribute<SegmentAttribute>();
         if (attribute is not null)
         {
-            return attribute.Name ?? type.Name[1..];
+            if (attribute.Name is not null)
+            {
+                return attribute.Name;
+            }
+            else
+            {
+                string name = type.Name[1..];
+
+                Type? parent = type.DeclaringType;
+                while (parent is not null)
+                {
+                    name = parent.Name[1..];
+                    parent = parent.DeclaringType;
+                }
+
+                return name;
+            }
         }
         else
         {
