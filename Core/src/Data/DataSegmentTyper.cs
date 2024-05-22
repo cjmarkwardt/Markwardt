@@ -19,7 +19,7 @@ public class DataSegmentTyper : IDataSegmentTyper
         => new() { Type = GetName(type) };
 
     public string GetName(Type type)
-        => type.GetCustomAttribute<SegmentAttribute>()?.Name ?? throw new InvalidOperationException($"Type {type} is not a data segment");
+        => GetTypeName(type) ?? throw new InvalidOperationException($"Type {type} is not a data segment");
 
     public Type GetType(IDataNode node)
     {
@@ -40,13 +40,26 @@ public class DataSegmentTyper : IDataSegmentTyper
 
     private void Refresh()
     {
-        foreach (Type type in Types.GetTypes())
+        foreach (Type type in Types.GetTypes().Where(x => x.IsInterface))
         {
-            SegmentAttribute? attribute = type.GetCustomAttribute<SegmentAttribute>();
-            if (attribute is not null)
+            string? name = GetTypeName(type);
+            if (name is not null)
             {
-                types[attribute.Name] = type;
+                types[name] = type;
             }
+        }
+    }
+
+    private string? GetTypeName(Type type)
+    {
+        SegmentAttribute? attribute = type.GetCustomAttribute<SegmentAttribute>();
+        if (attribute is not null)
+        {
+            return attribute.Name ?? type.Name[1..];
+        }
+        else
+        {
+            return null;
         }
     }
 }
