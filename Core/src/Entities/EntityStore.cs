@@ -26,8 +26,6 @@ public class EntityStore : ExtendedDisposable, IEntityStore
         this.store = store.DisposeWith(this);
         this.expirationCalculator = expirationCalculator ?? new EntityExpirationCalculator(TimeSpan.FromMinutes(5));
 
-        this.handler.Add(new EntityIdDataGenerator());
-
         this.LoopInBackground(TimeSpan.FromSeconds(1), async _ => await Clean());
     }
 

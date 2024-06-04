@@ -23,6 +23,9 @@ public static class InvokeExtensions
             disposable.Dispose();
         }
     }
+
+    public static void TryDisposeAll(this IEnumerable<object?> targets)
+        => targets.ForEach(x => x.TryDispose());
     
     public static async ValueTask TryDisposeAsync(this object? target)
     {
@@ -35,4 +38,7 @@ public static class InvokeExtensions
             target.TryDispose();
         }
     }
+
+    public static async ValueTask TryDisposeAllAsync(this IEnumerable<object?> targets)
+        => await Task.WhenAll(targets.Select(x => x.TryDisposeAsync().AsTask()));
 }

@@ -40,7 +40,7 @@ public class DataSegmentTyper : IDataSegmentTyper
 
     private void Refresh()
     {
-        foreach (Type type in Types.GetTypes().Where(x => x.IsInterface))
+        foreach (Type type in Types.GetAll().Where(x => x.IsInterface))
         {
             string? name = GetTypeName(type);
             if (name is not null)
