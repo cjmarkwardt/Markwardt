@@ -1,7 +1,10 @@
 namespace Markwardt;
 
-[AttributeUsage(AttributeTargets.Class)]
-public class ServiceTypeAttribute(params Type[] types) : Attribute
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+public class ServiceTypeAttribute(Type type) : Attribute
 {
-    public IReadOnlyList<Type> Types => types;
+    public Type Type => type;
 }
+
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+public class ServiceTypeAttribute<T>() : ServiceTypeAttribute(typeof(T));

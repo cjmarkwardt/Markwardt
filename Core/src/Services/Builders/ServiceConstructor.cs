@@ -102,7 +102,7 @@ public class ServiceConstructor(MethodBase method) : IServiceBuilder
 
         private static async ValueTask<object?> ResolveParameter(IServiceResolver resolver, IReadOnlyDictionary<string, object?>? arguments, ParameterInfo parameter)
         {
-            if (arguments != null && arguments.TryGetValue(parameter.Name!.ToLower(), out object? argument))
+            if (arguments != null && arguments.TryGetValue(parameter.Name!, out object? argument))
             {
                 return argument;
             }

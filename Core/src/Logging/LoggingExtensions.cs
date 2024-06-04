@@ -9,9 +9,10 @@ public static class LoggingExtensions
 
     public static void Log(this object target, LogMessage message)
     {
-        if (target is not ILogHandler handler || handler.HandleLog(message).TryGetValue(out message))
+        LogMessage? handledMessage = message;
+        if (target is not ILogHandler handler || handler.HandleLog(message).TryGetValue(out handledMessage))
         {
-            subjects.GetOrCreateValue(target).OnNext(message);
+            subjects.GetOrCreateValue(target).OnNext(handledMessage);
         }
     }
 

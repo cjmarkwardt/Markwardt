@@ -25,4 +25,12 @@ public static class StreamExtensions
 
         return buffer.ToArray();
     }
+
+    public static IDisposable<Stream> Buffer(this IDisposable<Stream> stream)
+    {
+        MemoryStream buffer = new();
+        stream.Value.CopyTo(buffer);
+        buffer.Position = 0;
+        return new Disposable<Stream>(buffer, [stream]);
+    }
 }

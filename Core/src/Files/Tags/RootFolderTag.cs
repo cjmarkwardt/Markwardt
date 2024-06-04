@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-[ServiceType(typeof(IFolder))]
+[ServiceType<IFolder>]
 public class RootFolderTag : SourceTag<SystemFolderTag, IFolder>
 {
     protected override ValueTask<object> Create(IFolder source)

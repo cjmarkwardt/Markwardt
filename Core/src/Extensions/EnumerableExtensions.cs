@@ -14,10 +14,10 @@ public static class EnumerableExtensions
 
         IEnumerator<T> itemsEnumerator = items.GetEnumerator();
         IEnumerator<T> otherEnumerator = other.GetEnumerator();
-        while (itemsEnumerator.Next().TryGetValue(out T item))
+        while (itemsEnumerator.Next().TryGetValue(out T? item))
         {
             Maybe<T> maybeOtherItem = otherEnumerator.Next();
-            if (!maybeOtherItem.HasValue || (maybeOtherItem.TryGetValue(out T otherItem) && !comparer.Equals(item, otherItem)))
+            if (!maybeOtherItem.HasValue || (maybeOtherItem.TryGetValue(out T? otherItem) && !comparer.Equals(item, otherItem)))
             {
                 return false;
             }

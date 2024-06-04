@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-[ServiceType(typeof(IFileTree))]
+[ServiceType<IFileTree>]
 public class LocalFileTreeTag : ImplementationTag<LocalFileTree>;
 
 public class LocalFileTree : IFileTree

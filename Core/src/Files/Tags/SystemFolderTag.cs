@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-[ServiceType(typeof(IFolder))]
+[ServiceType<IFolder>]
 public class SystemFolderTag : LocalFileNodeTag
 {
     public override string Path => Environment.SystemDirectory;

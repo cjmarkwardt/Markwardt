@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-[ServiceType(typeof(IFolder))]
+[ServiceType<IFolder>]
 public class CurrentFolderTag : LocalFolderTag
 {
     public override string Path => Environment.CurrentDirectory;

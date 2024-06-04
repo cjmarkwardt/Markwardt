@@ -5,6 +5,15 @@ public static class TaskExtensions
     private static readonly Dictionary<Type, Specifier> specifiers = [];
     private static readonly Dictionary<Type, Generalizer> generalizers = [];
 
+    public static TaskAwaiter GetAwaiter(this Task? task)
+        => task is null ? Task.CompletedTask.GetAwaiter() : task.GetAwaiter();
+
+    public static ValueTaskAwaiter GetAwaiter(this ValueTask? task)
+        => task is null ? ValueTask.CompletedTask.GetAwaiter() : task.GetAwaiter();
+
+    public static ValueTaskAwaiter<T?> GetAwaiter<T>(this ValueTask<T>? task)
+        => task is null ? ValueTask.FromResult<T?>(default).GetAwaiter() : task.GetAwaiter();
+
     public static bool IsVoidTask(this Type type)
         => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Task);
 

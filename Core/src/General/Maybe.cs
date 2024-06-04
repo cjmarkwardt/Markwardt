@@ -37,7 +37,7 @@ public readonly struct Maybe<T> : IMultiDisposable
 
     public readonly T Value => HasValue ? value : throw new InvalidOperationException("Has no value");
     
-    public bool TryGetValue(out T value)
+    public bool TryGetValue([MaybeNullWhen(false)] out T value)
     {
         if (HasValue)
         {
@@ -52,13 +52,13 @@ public readonly struct Maybe<T> : IMultiDisposable
     }
 
     public Maybe<TSelected> Select<TSelected>(Func<T, TSelected> select)
-        => TryGetValue(out T outValue) ? select(outValue).Maybe() : default;
+        => TryGetValue(out T? outValue) ? select(outValue).Maybe() : default;
 
     public Maybe<TSelected> Select<TSelected>(Func<T, Maybe<TSelected>> select)
-        => TryGetValue(out T outValue) ? select(outValue) : default;
+        => TryGetValue(out T? outValue) ? select(outValue) : default;
 
     public Maybe<T> Where(Func<T, bool> where)
-        => TryGetValue(out T outValue) && where(outValue) ? this : default;
+        => TryGetValue(out T? outValue) && where(outValue) ? this : default;
 
     public Maybe<TCasted> Cast<TCasted>()
         => Select(x => (TCasted)(object?)x!);
