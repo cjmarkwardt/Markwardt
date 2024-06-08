@@ -12,7 +12,7 @@ public class LiteDbStore : ExtendedDisposable, IDataStore
     public async ValueTask Save(IEnumerable<KeyValuePair<string, DataDictionary>> entries)
         => await Task.Run(() => this.entries.Upsert(entries.Select(x => new BsonDocument() { { "_id", x.Key }, { "Content", Serialize(x.Value) } })));
 
-    public async ValueTask<IReadOnlyDictionary<string, DataDictionary>> Load(IEnumerable<string> ids)
+    public async ValueTask<IDictionary<string, DataDictionary>> Load(IEnumerable<string> ids)
     {
         HashSet<string> idLookup = ids.ToHashSet();
         return await Task.Run(() => entries.Find(x => idLookup.Contains(x)).ToDictionary(x => x["_id"].AsString, x => (DataDictionary)Deserialize(x["Content"])));

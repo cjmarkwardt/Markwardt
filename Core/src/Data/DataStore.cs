@@ -3,7 +3,7 @@ namespace Markwardt;
 public interface IDataStore : IMultiDisposable
 {
     ValueTask Save(IEnumerable<KeyValuePair<string, DataDictionary>> entries);
-    ValueTask<IReadOnlyDictionary<string, DataDictionary>> Load(IEnumerable<string> ids);
+    ValueTask<IDictionary<string, DataDictionary>> Load(IEnumerable<string> ids);
 }
 
 public class DataStore : ExtendedDisposable, IDataStore
@@ -20,6 +20,6 @@ public class DataStore : ExtendedDisposable, IDataStore
         return ValueTask.CompletedTask;
     }
 
-    public ValueTask<IReadOnlyDictionary<string, DataDictionary>> Load(IEnumerable<string> ids)
-        => ValueTask.FromResult<IReadOnlyDictionary<string, DataDictionary>>(ids.ToDictionary(x => x, x => entries[x]));
+    public ValueTask<IDictionary<string, DataDictionary>> Load(IEnumerable<string> ids)
+        => ValueTask.FromResult<IDictionary<string, DataDictionary>>(ids.ToDictionary(x => x, x => entries[x]));
 }

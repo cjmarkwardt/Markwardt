@@ -4,13 +4,13 @@ public interface IEntityHandle
 {
     bool IsExpired { get; }
 
-    ValueTask<IEntityClaim> Claim();
+    ValueTask<IDisposable<IEntity>> Claim();
     Maybe<IDataEntity> PopChanged();
 }
 
 public sealed class EntityHandle(Task<IDataEntity> load, IEntityExpirationCalculator expirationCalculator) : IEntityHandle
 {
-    public static (EntityHandle Handle, EntityClaim Claim) NewEntity(IDataEntity entity, IEntityExpirationCalculator expirationCalculator)
+    public static (EntityHandle Handle, IDisposable<IEntity> Entity) NewEntity(IDataEntity entity, IEntityExpirationCalculator expirationCalculator)
     {
         EntityHandle handle = new(Task.FromResult(entity), expirationCalculator);
         return (handle, handle.CreateClaim(entity));
@@ -21,7 +21,7 @@ public sealed class EntityHandle(Task<IDataEntity> load, IEntityExpirationCalcul
 
     public bool IsExpired => expiration is not null && DateTime.Now > expiration;
 
-    public async ValueTask<IEntityClaim> Claim()
+    public async ValueTask<IDisposable<IEntity>> Claim()
         => CreateClaim(await load);
 
     public Maybe<IDataEntity> PopChanged()
@@ -36,11 +36,11 @@ public sealed class EntityHandle(Task<IDataEntity> load, IEntityExpirationCalcul
         }
     }
 
-    private EntityClaim CreateClaim(IEntity content)
+    private IDisposable<IEntity> CreateClaim(IEntity content)
     {   
         claims++;
         expiration = null;
-        return new EntityClaim(content, DestroyClaim);
+        return new Disposable<IEntity>(content, [Disposable.Create(DestroyClaim)]);
     }
 
     private void DestroyClaim()

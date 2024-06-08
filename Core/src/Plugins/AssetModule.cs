@@ -34,7 +34,7 @@ public static class AssetModuleExtensions
 
 public class AssetModule(string id, object? profile, IAssetDataLoader loader) : ExtendedDisposable, IAssetModule
 {
-    private readonly ClaimCache<string, object> cache = new(new ClaimCachePolicy<object>((item, claims, lastClaim, lastRelease) => claims == 0 && lastClaim.AddMinutes(5) > DateTime.Now));
+    private readonly ClaimCacheStore<string, object> cache = new(new ClaimCachePolicy<object>((item, claims, lastClaim, lastRelease) => claims == 0 && lastClaim.AddMinutes(5) > DateTime.Now));
 
     public string Id => id;
     public object? Profile => profile;
