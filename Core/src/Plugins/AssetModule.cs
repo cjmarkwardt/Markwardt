@@ -8,12 +8,12 @@ public interface IAssetModule : IMultiDisposable
     string Id { get; }
     object? Profile { get; }
 
-    ValueTask<Maybe<IDisposable<object>>> Load(string id, IClaimCachePolicy<object>? cachePolicy = null, IAssetDataReader? reader = null);
+    ValueTask<Maybe<IDisposable<object>>> Load(string id, IAssetDataReader? reader = null);
 }
 
 public static class AssetModuleExtensions
 {
-    public static async ValueTask<Maybe<IDisposable<T>>> Load<T>(this IAssetModule module, string id, IClaimCachePolicy<T>? cachePolicy = null, IAssetDataReader? reader = null)
+    public static async ValueTask<Maybe<IDisposable<T>>> Load<T>(this IAssetModule module, string id, IClaimCachePolicy<AssetId, T>? cachePolicy = null, IAssetDataReader? reader = null)
         => (await module.Load(id, cachePolicy, reader)).Select(x => x.Cast<T>());
 
     public static async ValueTask<bool> Activate(this IAssetModule module, string id)
@@ -32,14 +32,20 @@ public static class AssetModuleExtensions
     }
 }
 
-public class AssetModule(string id, object? profile, IAssetDataLoader loader) : ExtendedDisposable, IAssetModule
+public class AssetModule(string id, object? profile, IAssetDataLoader loader, [Inject<AssetCachePolicyTag>] IClaimCachePolicy<AssetId, object> cachePolicy) : ExtendedDisposable, IAssetModule
 {
-    private readonly ClaimCache<string, object> cache = new(new ClaimCachePolicy<object>((item, claims, lastClaim, lastRelease) => claims == 0 && lastClaim.AddMinutes(5) > DateTime.Now));
+    private static ClaimCachePolicy<string, object> GetCachePolicy(string module, IClaimCachePolicy<AssetId, object> basePolicy)
+        => new((id, asset, claims, lastClaim, lastRelease) => basePolicy.IsExpired(new(module, id), asset, claims, lastClaim, lastRelease));
+
+    private static CacheKeyLoader<string, object> GetKeyLoader(IAssetDataLoader loader)
+        => new(async ids => await Task.WhenAll(ids.Select(x => )));
+
+    private readonly ClaimCache<string, object> cache = new(GetCachePolicy(id, cachePolicy), GetKeyLoader(loader));
 
     public string Id => id;
     public object? Profile => profile;
 
-    public async ValueTask<Maybe<IDisposable<object>>> Load(string id, IClaimCachePolicy<object>? cachePolicy = null, IAssetDataReader? reader = null)
+    public async ValueTask<Maybe<IDisposable<object>>> Load(string id, IAssetDataReader? reader = null)
     {
         if (cache.Claim(id).TryGetValue(out IDisposable<object>? claim))
         {
@@ -67,4 +73,6 @@ public class AssetModule(string id, object? profile, IAssetDataLoader loader) : 
         cache.DisposeWith(this);
         loader.DisposeWith(this);
     }
+
+    private sealed record ClaimRequest(string Id, IAssetDataReader)
 }

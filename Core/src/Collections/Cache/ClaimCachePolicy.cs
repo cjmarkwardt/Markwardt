@@ -1,12 +1,14 @@
 namespace Markwardt;
 
-public interface IClaimCachePolicy<T>
+public interface IClaimCachePolicy<in TKey, in T>
 {
-    bool IsExpired(T item, int claims, DateTime lastClaim, DateTime? lastRelease);
+    bool IsExpired(TKey key, T item, int claims, DateTime lastClaim, DateTime? lastRelease);
 }
 
-public record ClaimCachePolicy<T>(Func<T, int, DateTime, DateTime?, bool> isExpired) : IClaimCachePolicy<T>
+public class ClaimCachePolicy<TKey, T>(ClaimCachePolicy<TKey, T>.Delegate @delegate) : IClaimCachePolicy<TKey, T>
 {
-    public bool IsExpired(T item, int claims, DateTime lastClaim, DateTime? lastRelease)
-        => isExpired(item, claims, lastClaim, lastRelease);
+    public delegate bool Delegate(TKey key, T item, int claims, DateTime lastClaim, DateTime? lastRelease);
+
+    public bool IsExpired(TKey key, T item, int claims, DateTime lastClaim, DateTime? lastRelease)
+        => @delegate(key, item, claims, lastClaim, lastRelease);
 }

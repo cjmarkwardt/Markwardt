@@ -9,13 +9,11 @@ public interface IAssetManager : IAssetIndex, IAssetLoader, IAssetActivator, IMu
     bool Clear();
 
     IDisposable ConfigureReader(Func<AssetId, bool> isValid, IAssetDataReader reader);
-    IDisposable ConfigureCache(Func<AssetId, bool> isValid, IClaimCachePolicy<object> policy);
 }
 
 public class AssetManager : ExtendedDisposable, IAssetManager
 {
     private readonly HashSet<Configuration<IAssetDataReader>> readerConfigurations = [];
-    private readonly HashSet<Configuration<IClaimCachePolicy<object>>> cacheConfigurations = [];
     private readonly ConditionalWeakTable<object, AssetId> ids = [];
 
     private readonly Dictionary<string, IAssetModule> modules = [];
@@ -50,9 +48,9 @@ public class AssetManager : ExtendedDisposable, IAssetManager
         return false;
     }
 
-    public async ValueTask<Maybe<IDisposable<object>>> Load(AssetId id, IClaimCachePolicy<object>? cachePolicy = null, IAssetDataReader? reader = null)
+    public async ValueTask<Maybe<IDisposable<object>>> Load(AssetId id, IAssetDataReader? reader = null)
     {
-        Maybe<IDisposable<object>> asset = await modules[id.Module].Load(id.Value, cachePolicy ?? GetConfiguration(cacheConfigurations, id), reader ?? GetConfiguration(readerConfigurations, id));
+        Maybe<IDisposable<object>> asset = await modules[id.Module].Load(id.Value, reader ?? GetConfiguration(readerConfigurations, id));
         if (asset.HasValue)
         {
             ids.AddOrUpdate(asset.Value.Value, id);
@@ -69,9 +67,6 @@ public class AssetManager : ExtendedDisposable, IAssetManager
 
     public IDisposable ConfigureReader(Func<AssetId, bool> isValid, IAssetDataReader reader)
         => Configure(readerConfigurations, isValid, reader);
-
-    public IDisposable ConfigureCache(Func<AssetId, bool> isValid, IClaimCachePolicy<object> policy)
-        => Configure(cacheConfigurations, isValid, policy);
 
     private IDisposable Configure<T>(ICollection<Configuration<T>> configurations, Func<AssetId, bool> isValid, T value)
         where T : class
