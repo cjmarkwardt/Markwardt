@@ -5,6 +5,12 @@ public static class TaskExtensions
     private static readonly Dictionary<Type, Specifier> specifiers = [];
     private static readonly Dictionary<Type, Generalizer> generalizers = [];
 
+    public static async Task<object?> WithNullResult(this Task task)
+    {
+        await task;
+        return null;
+    }
+
     public static TaskAwaiter GetAwaiter(this Task? task)
         => task is null ? Task.CompletedTask.GetAwaiter() : task.GetAwaiter();
 
@@ -13,6 +19,20 @@ public static class TaskExtensions
 
     public static ValueTaskAwaiter<T?> GetAwaiter<T>(this ValueTask<T>? task)
         => task is null ? ValueTask.FromResult<T?>(default).GetAwaiter() : task.GetAwaiter();
+
+    public static async IAsyncEnumerable<T> AwaitMerge<T>(this IEnumerable<Task<T>> tasks)
+    {
+        HashSet<Task<T>> set = tasks.ToHashSet();
+        while (set.Count > 0)
+        {
+            Task<T> task = await Task.WhenAny(set);
+            set.Remove(task);
+            yield return task.Result;
+        }
+    }
+
+    public static IAsyncEnumerable<object?> AwaitMerge(this IEnumerable<Task> tasks)
+        => tasks.Select(x => x.WithNullResult()).AwaitMerge();
 
     public static bool IsVoidTask(this Type type)
         => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Task);

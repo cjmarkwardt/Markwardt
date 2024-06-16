@@ -1,19 +1,16 @@
 namespace Markwardt;
 
 [Singleton<AssetManager>]
-public interface IAssetManager : IAssetIndex, IAssetLoader, IAssetActivator, IMultiDisposable
+public interface IAssetManager : IAssetIndex, IAssetSource, IAssetActivator, IMultiDisposable
 {
     void Add(IAssetModule module);
     bool Remove(string module);
     bool Contains(string module);
     bool Clear();
-
-    IDisposable ConfigureReader(Func<AssetId, bool> isValid, IAssetDataReader reader);
 }
 
 public class AssetManager : ExtendedDisposable, IAssetManager
 {
-    private readonly HashSet<Configuration<IAssetDataReader>> readerConfigurations = [];
     private readonly ConditionalWeakTable<object, AssetId> ids = [];
 
     private readonly Dictionary<string, IAssetModule> modules = [];
@@ -48,9 +45,9 @@ public class AssetManager : ExtendedDisposable, IAssetManager
         return false;
     }
 
-    public async ValueTask<Maybe<IDisposable<object>>> Load(AssetId id, IAssetDataReader? reader = null)
+    public async ValueTask<Maybe<IDisposable<object>>> Load(AssetId id)
     {
-        Maybe<IDisposable<object>> asset = await modules[id.Module].Load(id.Value, reader ?? GetConfiguration(readerConfigurations, id));
+        Maybe<IDisposable<object>> asset = await modules[id.Module].Claim(id);
         if (asset.HasValue)
         {
             ids.AddOrUpdate(asset.Value.Value, id);
@@ -65,25 +62,6 @@ public class AssetManager : ExtendedDisposable, IAssetManager
     public async ValueTask Activate(string id)
         => await Task.WhenAll(modules.Values.Select(x => x.Activate(id).AsTask()));
 
-    public IDisposable ConfigureReader(Func<AssetId, bool> isValid, IAssetDataReader reader)
-        => Configure(readerConfigurations, isValid, reader);
-
-    private IDisposable Configure<T>(ICollection<Configuration<T>> configurations, Func<AssetId, bool> isValid, T value)
-        where T : class
-    {
-        Configuration<T> configuration = new(isValid, value);
-        configurations.Add(configuration);
-        return Disposable.Create(() => configurations.Remove(configuration));
-    }
-
-    private T? GetConfiguration<T>(IEnumerable<Configuration<T>> configurations, AssetId id)
-        where T : class
-        => configurations.FirstOrDefault(x => x.Get(id) is not null)?.Get(id);
-
-    private sealed class Configuration<T>(Func<AssetId, bool> isValid, T value)
-        where T : class
-    {
-        public T? Get(AssetId id)
-            => isValid(id) ? value : null;
-    }
+    public IAsyncEnumerable<KeyValuePair<AssetId, IDisposable<object>>> Claim(IEnumerable<AssetId> keys)
+        => keys.GroupBy(x => x.Module).Where(x => modules.ContainsKey(x.Key)).Select(x => modules[x.Key].Claim(x)).Merge();
 }

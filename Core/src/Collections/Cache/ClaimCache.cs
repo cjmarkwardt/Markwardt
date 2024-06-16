@@ -1,36 +1,27 @@
 namespace Markwardt;
 
-public interface IClaimCache<in TRequest, TKey, T> : IMultiDisposable
+public interface IClaimCache<TKey, T> : IClaimSource<TKey, T>, IMultiDisposable
 {
     IReadOnlyDictionary<TKey, T> Current { get; }
 
     IObservable<IEnumerable<T>> Purged { get; }
 
-    ValueTask<IReadOnlyDictionary<TKey, IDisposable<T>>> Claim(TRequest request, bool requireAll = true);
     void Purge();
 }
 
-public static class ClaimCacheExtensions
-{
-    public static async ValueTask<Maybe<IDisposable<T>>> Claim<TKey, T>(this IClaimCache<IEnumerable<TKey>, TKey, T> cache, TKey key)
-        => (await cache.Claim([key], false)).TryGetValue(key, out IDisposable<T>? value) ? value.Maybe() : default;
-}
-
-public class ClaimCache<TRequest, TKey, T> : ExtendedDisposable, IClaimCache<TRequest, TKey, T>
+public class ClaimCache<TKey, T> : ExtendedDisposable, IClaimCache<TKey, T>
     where TKey : notnull
 {
-    public ClaimCache(IClaimCachePolicy<TKey, T> policy, ICacheKeyRequester<TRequest, TKey> requester, ICacheKeyLoader<TKey, T> loader)
+    public ClaimCache(IClaimCachePolicy<TKey, T> policy, IKeyLoader<TKey, T> loader)
     {
         this.policy = policy;
-        this.requester = requester;
         this.loader = loader;
 
         Current = new EntryViewer(entries);
     }
 
     private readonly IClaimCachePolicy<TKey, T> policy;
-    private readonly ICacheKeyRequester<TRequest, TKey> requester;
-    private readonly ICacheKeyLoader<TKey, T> loader;
+    private readonly IKeyLoader<TKey, T> loader;
     private readonly Dictionary<TKey, Entry> entries = [];
     private readonly Dictionary<TKey, Task> currentLoads = [];
     private readonly AsyncStatus claiming = new();
@@ -40,66 +31,51 @@ public class ClaimCache<TRequest, TKey, T> : ExtendedDisposable, IClaimCache<TRe
 
     public IReadOnlyDictionary<TKey, T> Current { get; }
 
-    public async ValueTask<IReadOnlyDictionary<TKey, IDisposable<T>>> Claim(TRequest request, bool requireAll = true)
+    public async IAsyncEnumerable<KeyValuePair<TKey, IDisposable<T>>> Claim(IEnumerable<TKey> keys)
     {
-        this.VerifyUndisposed();
-        using IDisposable claimingStatus = claiming.Start();
-
-        Dictionary<TKey, IDisposable<T>> claims = [];
-        Dictionary<TKey, Task<IDisposable<T>>> dependentLoads = [];
-        Dictionary<TKey, TaskCompletionSource> newLoads = [];
-
-        async Task<IDisposable<T>> DependentLoad(TKey key, Task targetLoad)
+        if (this.IsDisposed())
         {
-            await targetLoad;
-            return entries[key].Claim();
+            yield break;
         }
 
-        IEnumerable<TKey> keys = await requester.Request(request);
+        using IDisposable claimingStatus = claiming.Start();
+
+        HashSet<Task<KeyValuePair<TKey, IDisposable<T>>>> dependentLoads = [];
+        Dictionary<TKey, TaskCompletionSource> newLoads = [];
+
+        async Task<KeyValuePair<TKey, IDisposable<T>>> WaitForLoad(TKey key, Task targetLoad)
+        {
+            await targetLoad;
+            return new(key, entries[key].Claim());
+        }
 
         foreach (TKey key in keys)
         {
             if (entries.TryGetValue(key, out Entry? entry))
             {
-                claims[key] = entry.Claim();
+                yield return new(key, entry.Claim());
             }
             else if (currentLoads.TryGetValue(key, out Task? currentLoad))
             {
-                dependentLoads[key] = DependentLoad(key, currentLoad);
+                dependentLoads.Add(WaitForLoad(key, currentLoad));
             }
             else
             {
-                TaskCompletionSource newLoad = new();
-                currentLoads[key] = newLoad.Task;
-                newLoads[key] = newLoad;
+                newLoads[key] = StartLoad(key);
             }
         }
+
+        IAsyncEnumerable<KeyValuePair<TKey, IDisposable<T>>> loadResults = dependentLoads.AwaitMerge();
 
         if (newLoads.Count > 0)
         {
-            IDictionary<TKey, T> newItems = await loader.Load(newLoads.Keys);
-
-            foreach (KeyValuePair<TKey, T> load in newItems)
-            {
-                Entry entry = new(load.Key, load.Value);
-                entries.Add(load.Key, entry);
-                claims.Add(load.Key, entry.Claim());
-                currentLoads.Remove(load.Key);
-            }
-
-            newItems.Keys.ForEach(x => newLoads[x].SetResult());
+            loadResults.Merge(loader.Load(newLoads.Keys).Select(x => new KeyValuePair<TKey, IDisposable<T>>(x.Key, EndLoad(x.Key, x.Value))).OnEach(x => newLoads[x.Key].SetResult()));
         }
 
-        await Task.WhenAll(dependentLoads.Values);
-        dependentLoads.ForEach(x => claims[x.Key] = x.Value.Result);
-
-        if (requireAll && keys.All(claims.ContainsKey))
+        await foreach (KeyValuePair<TKey, IDisposable<T>> loadResult in loadResults)
         {
-            await claims.Values.TryDisposeAllAsync();
-            throw new InvalidOperationException();
+            yield return loadResult;
         }
-
-        return claims;
     }
 
     public void Purge()
@@ -110,15 +86,19 @@ public class ClaimCache<TRequest, TKey, T> : ExtendedDisposable, IClaimCache<TRe
         }
     }
 
-    protected override void OnSharedDisposal()
+    protected override void OnDisposal()
     {
-        base.OnSharedDisposal();
+        base.OnDisposal();
 
-        TaskExtensions.Fork(async () =>
-        {
-            await claiming.Task;
-            Purge(entries);
-        });
+        Purge(entries);
+    }
+
+    protected override async ValueTask OnAsyncDisposal()
+    {
+        await base.OnAsyncDisposal();
+
+        await claiming.Task;
+        Purge(entries);
     }
 
     private void Purge(IEnumerable<KeyValuePair<TKey, Entry>> entries)
@@ -128,6 +108,21 @@ public class ClaimCache<TRequest, TKey, T> : ExtendedDisposable, IClaimCache<TRe
             entries.ForEach(x => this.entries.Remove(x.Key));
             purged.OnNext(entries.Select(x => x.Value.Item));
         }
+    }
+
+    private TaskCompletionSource StartLoad(TKey key)
+    {
+        TaskCompletionSource load = new();
+        currentLoads[key] = load.Task;
+        return load;
+    }
+
+    private IDisposable<T> EndLoad(TKey key, T item)
+    {
+        Entry entry = new(key, item);
+        entries.Add(key, entry);
+        currentLoads.Remove(key);
+        return entry.Claim();
     }
 
     private sealed class Entry(TKey key, T item)
@@ -191,6 +186,3 @@ public class ClaimCache<TRequest, TKey, T> : ExtendedDisposable, IClaimCache<TRe
             => GetEnumerator();
     }
 }
-
-public class ClaimCache<TKey, T>(IClaimCachePolicy<TKey, T> policy, ICacheKeyLoader<TKey, T> loader) : ClaimCache<IEnumerable<TKey>, TKey, T>(policy, new CacheKeyRequester<IEnumerable<TKey>, TKey>(x => ValueTask.FromResult(x)), loader)
-    where TKey : notnull;

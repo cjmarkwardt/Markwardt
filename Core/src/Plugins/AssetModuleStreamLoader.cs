@@ -5,7 +5,7 @@ namespace Markwardt;
 [Singleton<AssetModuleStreamLoader>]
 public interface IAssetModuleStreamLoader
 {
-    ValueTask<Failable<IAssetModule>> Load(IStreamPackage package);
+    ValueTask<Failable<IAssetModule>> Load(IDataAccessor<string, Stream?> package, IAssetReader reader);
 }
 
 public class AssetModuleStreamLoader : IAssetModuleStreamLoader
@@ -13,7 +13,7 @@ public class AssetModuleStreamLoader : IAssetModuleStreamLoader
     public required IServiceResolver Resolver { get; init; }
     public required IAssetModule.Factory ModuleFactory { get; init; }
 
-    public async ValueTask<Failable<IAssetModule>> Load(IStreamPackage package)
+    public async ValueTask<Failable<IAssetModule>> Load(IDataAccessor<string, Stream?> package)
     {
         try
         {
@@ -26,9 +26,9 @@ public class AssetModuleStreamLoader : IAssetModuleStreamLoader
         }
     }
 
-    private sealed class Loader : AssetDataLoader
+    private sealed class Loader : AssetLoader
     {
-        public Loader(IServiceResolver resolver, IStreamPackage package)
+        public Loader(IServiceResolver resolver, IDataAccessor<string, Stream?> package)
         {
             this.resolver = resolver;
             this.package = package;
@@ -39,7 +39,7 @@ public class AssetModuleStreamLoader : IAssetModuleStreamLoader
         }
 
         private readonly IServiceResolver resolver;
-        private readonly IStreamPackage package;
+        private readonly IDataAccessor<string, Stream?> package;
         private readonly AssetModuleAttribute attribute;
         private readonly Func<string, ValueTask<object?>> loadAsset;
 
@@ -48,14 +48,14 @@ public class AssetModuleStreamLoader : IAssetModuleStreamLoader
         public async ValueTask<object?> GetModuleProfile()
             => attribute.Profile is null ? null : await resolver.Create(attribute.Profile);
 
-        protected override async ValueTask<object?> LoadAsset(string id)
-            => await loadAsset(id);
+        protected override async ValueTask<object?> LoadAsset(AssetId id)
+            => await loadAsset(id.Value);
 
-        protected override ValueTask<IDisposable<Stream>?> LoadData(string id)
-            => ValueTask.FromResult(package.Open($"Data/{id}")?.Buffer());
+        protected override ValueTask<IDisposable<Stream>?> LoadData(AssetId id)
+            => ValueTask.FromResult(package.Open($"Data/{id.Value}")?.Buffer());
     }
 
-    private sealed class PluginContext(IStreamPackage package) : AssemblyLoadContext(false)
+    private sealed class PluginContext(IDataAccessor<string, Stream?> package) : AssemblyLoadContext(false)
     {
         public Assembly? LoadFromEntry(string name)
         {

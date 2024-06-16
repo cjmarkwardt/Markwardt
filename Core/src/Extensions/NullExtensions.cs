@@ -31,7 +31,11 @@ public static class NullExtensions
         where T : class
         => items.Where(x => x != null).Select(x => x!);
 
-    public static IEnumerable<T> WhereValueNotNull<T>(this IEnumerable<T?> items)
+    public static IAsyncEnumerable<T> WhereNotNull<T>(this IAsyncEnumerable<T?> items)
+        where T : class
+        => items.Where(x => x != null).Select(x => x!);
+
+    public static IAsyncEnumerable<T> WhereValueNotNull<T>(this IAsyncEnumerable<T?> items)
         where T : struct
         => items.Where(x => x.HasValue).Select(x => x!.Value);
 

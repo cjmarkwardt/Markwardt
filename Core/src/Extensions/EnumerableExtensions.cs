@@ -2,6 +2,24 @@ namespace Markwardt;
 
 public static class EnumerableExtensions
 {
+    public static IAsyncEnumerable<T> Merge<T>(this IAsyncEnumerable<T> source, params IAsyncEnumerable<T>[] others)
+        => others.Prepend(source).Merge();
+        
+    public static IAsyncEnumerable<T> Merge<T>(this IEnumerable<IAsyncEnumerable<T>> sources)
+        => AsyncEnumerableEx.Merge(sources.ToArray());
+
+    public static Maybe<T> FirstOrMaybe<T>(this IEnumerable<T> source)
+    {
+        IEnumerator<T> enumerator = source.GetEnumerator();
+        return enumerator.MoveNext() ? enumerator.Current : new Maybe<T>();
+    }
+
+    public static async ValueTask<Maybe<T>> FirstOrMaybeAsync<T>(this IAsyncEnumerable<T> source)
+    {
+        IAsyncEnumerator<T> enumerator = source.GetAsyncEnumerator();
+        return await enumerator.MoveNextAsync() ? enumerator.Current : new Maybe<T>();
+    }
+
     public static bool None<T>(this IEnumerable<T> items)
         => !items.Any();
 
@@ -47,6 +65,42 @@ public static class EnumerableExtensions
 
     public static async ValueTask ForEachParallel<T>(this IEnumerable<T> items, Func<T, ValueTask> action)
         => await Task.WhenAll(items.Select(x => action(x).AsTask()).ToArray());
+
+    public static IEnumerable<T> OnEach<T>(this IEnumerable<T> items, Action<T> action)
+    {
+        foreach (T item in items)
+        {
+            action(item);
+            yield return item;
+        }
+    }
+
+    public static async IAsyncEnumerable<T> OnEach<T>(this IEnumerable<T> items, Func<T, ValueTask> action)
+    {
+        foreach (T item in items)
+        {
+            await action(item);
+            yield return item;
+        }
+    }
+
+    public static async IAsyncEnumerable<T> OnEach<T>(this IAsyncEnumerable<T> items, Action<T> action)
+    {
+        await foreach (T item in items)
+        {
+            action(item);
+            yield return item;
+        }
+    }
+
+    public static async IAsyncEnumerable<T> OnEach<T>(this IAsyncEnumerable<T> items, Func<T, ValueTask> action)
+    {
+        await foreach (T item in items)
+        {
+            await action(item);
+            yield return item;
+        }
+    }
 
     public static IEnumerable Cast(this IEnumerable items, Type type)
         => (IEnumerable)Reflector.Reflect(Enumerable.Cast<object?>, type).Invoke(null, [items])!;

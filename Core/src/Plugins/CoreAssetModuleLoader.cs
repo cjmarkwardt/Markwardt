@@ -14,7 +14,7 @@ public class CoreAssetModuleLoader : ICoreAssetModuleLoader
     public async ValueTask<IAssetModule> Load(string id, object? profile = null, Func<string, ValueTask<object?>>? loadAsset = null, Func<string, ValueTask<IDisposable<Stream>?>>? loadData = null)
         => await ModuleFactory(id, profile, new Loader(Resolver, loadAsset ?? (_ => ValueTask.FromResult<object?>(null)), loadData ?? (_ => ValueTask.FromResult<IDisposable<Stream>?>(null))));
 
-    private sealed class Loader(IServiceResolver resolver, Func<string, ValueTask<object?>> loadAsset, Func<string, ValueTask<IDisposable<Stream>?>> loadData) : AssetDataLoader
+    private sealed class Loader(IServiceResolver resolver, Func<string, ValueTask<object?>> loadAsset, Func<string, ValueTask<IDisposable<Stream>?>> loadData) : AssetLoader
     {
         private readonly Func<string, ValueTask<object?>> loadAssemblyAsset = AssetAttribute.CreateAssetFactory(resolver, AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.GetExportedTypes()));
 
