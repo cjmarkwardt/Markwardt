@@ -2,6 +2,18 @@ namespace Markwardt;
 
 public static class EnumerableExtensions
 {
+    public static Maybe<T> MaybeFirst<T>(this IEnumerable<T> items)
+    {
+        IEnumerator<T> enumerator = items.GetEnumerator();
+        return enumerator.MoveNext() ? enumerator.Current : new Maybe<T>();
+    }
+
+    public static async ValueTask<Maybe<T>> MaybeFirst<T>(this IAsyncEnumerable<T> items)
+    {
+        IAsyncEnumerator<T> enumerator = items.GetAsyncEnumerator();
+        return await enumerator.MoveNextAsync() ? enumerator.Current : new Maybe<T>();
+    }
+
     public static bool None<T>(this IEnumerable<T> items)
         => !items.Any();
 
