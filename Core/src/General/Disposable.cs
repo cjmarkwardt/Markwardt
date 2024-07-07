@@ -11,11 +11,14 @@ public interface IDisposable<out T> : IMultiDisposable
 
 public static class DisposableWrapperExtensions
 {
+    public static IDisposable<TSelected> Select<T, TSelected>(this IDisposable<T> disposable, Func<T, TSelected> selector)
+        => new Disposable<TSelected>(selector(disposable.Value), [disposable]);
+
     public static IDisposable<TCasted> Cast<T, TCasted>(this IDisposable<T> disposable)
-        => new Disposable<TCasted>((TCasted)(object?)disposable.Value!, [disposable]);
+        => disposable.Select(x => (TCasted)(object?)x!);
 }
 
-public sealed class Disposable<T>(T value, IEnumerable<IDisposable> disposables) : IDisposable<T>
+public sealed class Disposable<T>(T value, IEnumerable<object> disposables) : IDisposable<T>
 {
     public bool IsDisposed { get; private set; }
 
@@ -28,7 +31,7 @@ public sealed class Disposable<T>(T value, IEnumerable<IDisposable> disposables)
         {
             IsDisposed = true;
             value.TryDispose();
-            disposables.ForEach(x => x.Dispose());
+            disposables.ForEach(x => x.TryDispose());
         }
     }
 

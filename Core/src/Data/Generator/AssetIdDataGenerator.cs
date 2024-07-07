@@ -2,12 +2,21 @@ namespace Markwardt;
 
 public class AssetIdDataGenerator : DataGenerator<AssetId, AssetIdDataGenerator.Serializer>
 {
-    public class Serializer : DataTupleSerializer<AssetId?>
+    public class Serializer : DataSerializer<AssetId?>
     {
-        protected override AssetId? ReadTuple(IReadOnlyList<string> data)
-            => new(data[0], data[1]);
+        protected override AssetId? Read(string data)
+            => new(data);
 
-        protected override IEnumerable<object>? WriteTuple(AssetId? value)
-            => value is null ? null : [value.Module, value.Value];
+        protected override string? Write(AssetId? value)
+        {
+            if (value is null)
+            {
+                return null;
+            }
+            else
+            {
+                return value.Value;
+            }
+        }
     }
 }

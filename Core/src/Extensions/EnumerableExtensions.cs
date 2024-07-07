@@ -2,6 +2,48 @@ namespace Markwardt;
 
 public static class EnumerableExtensions
 {
+    public static void Enumerate<T>(this IEnumerable<T> enumerable)
+    {
+        IEnumerator<T> enumerator = enumerable.GetEnumerator();
+        while (enumerator.MoveNext());
+    }
+
+    public static async ValueTask Enumerate<T>(this IAsyncEnumerable<T> enumerable)
+    {
+        IAsyncEnumerator<T> enumerator = enumerable.GetAsyncEnumerator();
+        while (await enumerator.MoveNextAsync());
+    }
+
+    public static IAsyncEnumerable<T> Merge<T>(this IAsyncEnumerable<T> source, params IAsyncEnumerable<T>[] others)
+        => others.Prepend(source).Merge();
+        
+    public static IAsyncEnumerable<T> Merge<T>(this IEnumerable<IAsyncEnumerable<T>> sources)
+        => AsyncEnumerableEx.Merge(sources.ToArray());
+
+    public static Maybe<T> FirstOrMaybe<T>(this IEnumerable<T> source)
+    {
+        IEnumerator<T> enumerator = source.GetEnumerator();
+        return enumerator.MoveNext() ? enumerator.Current : new Maybe<T>();
+    }
+
+    public static async ValueTask<Maybe<T>> FirstOrMaybeAsync<T>(this IAsyncEnumerable<T> source)
+    {
+        IAsyncEnumerator<T> enumerator = source.GetAsyncEnumerator();
+        return await enumerator.MoveNextAsync() ? enumerator.Current : new Maybe<T>();
+    }
+    
+    public static Maybe<T> MaybeFirst<T>(this IEnumerable<T> items)
+    {
+        IEnumerator<T> enumerator = items.GetEnumerator();
+        return enumerator.MoveNext() ? enumerator.Current : new Maybe<T>();
+    }
+
+    public static async ValueTask<Maybe<T>> MaybeFirst<T>(this IAsyncEnumerable<T> items)
+    {
+        IAsyncEnumerator<T> enumerator = items.GetAsyncEnumerator();
+        return await enumerator.MoveNextAsync() ? enumerator.Current : new Maybe<T>();
+    }
+
     public static bool None<T>(this IEnumerable<T> items)
         => !items.Any();
 

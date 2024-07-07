@@ -244,6 +244,20 @@ public class Failable<T> : Failable
 
     public async ValueTask<Failable<TConverted>> Convert<TConverted>(Func<T, ValueTask<TConverted>> convert)
         => await Convert(async r => Success(await convert(r)));
+    
+    public bool TryGetResult([MaybeNullWhen(false)] out T result)
+    {
+        if (Exception is null)
+        {
+            result = Result;
+            return true;
+        }
+        else
+        {
+            result = default!;
+            return false;
+        }
+    }
 
     public Failable<TCasted> Cast<TCasted>()
         => Convert(r => (TCasted)(object?)r!);
