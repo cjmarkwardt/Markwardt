@@ -8,7 +8,7 @@ public interface IDataNode
 public static class DataNodeExtensions
 {
     public static DataValue? AsValue(this IDataNode node)
-        => node is DataValue value ? value : null;
+        => node is DataValue value ? (DataValue?)value : null;
 
     public static DataList? AsList(this IDataNode node)
         => node as DataList;

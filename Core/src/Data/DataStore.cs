@@ -1,25 +1,20 @@
 namespace Markwardt;
 
-public interface IDataStore : IMultiDisposable
+public interface IDataStore
 {
-    ValueTask Save(IEnumerable<KeyValuePair<string, DataDictionary>> entries);
-    ValueTask<IReadOnlyDictionary<string, DataDictionary>> Load(IEnumerable<string> ids);
+    ValueTask Save(IEnumerable<KeyValuePair<string, IDataNode>> nodes);
+    IAsyncEnumerable<KeyValuePair<string, IDataNode>> Load(IEnumerable<string> keys);
 }
 
-public class DataStore : ExtendedDisposable, IDataStore
+public class DataStore(Stream stream, IDataExplorer explorer, IDataIndexSerializer indexSerializer) : IDataStore
 {
-    private readonly Dictionary<string, DataDictionary> entries = [];
-
-    public ValueTask Save(IEnumerable<KeyValuePair<string, DataDictionary>> entries)
+    public async ValueTask Save(IEnumerable<KeyValuePair<string, IDataNode>> nodes)
     {
-        foreach (KeyValuePair<string, DataDictionary> field in entries)
-        {
-            this.entries[field.Key] = field.Value;
-        }
-
-        return ValueTask.CompletedTask;
+        await indexSerializer.Deserialize(explorer.GetStream(stream, 0));
     }
 
-    public ValueTask<IReadOnlyDictionary<string, DataDictionary>> Load(IEnumerable<string> ids)
-        => ValueTask.FromResult<IReadOnlyDictionary<string, DataDictionary>>(ids.ToDictionary(x => x, x => entries[x]));
+    public IAsyncEnumerable<KeyValuePair<string, IDataNode>> Load(IEnumerable<string> keys)
+    {
+        throw new NotImplementedException();
+    }
 }

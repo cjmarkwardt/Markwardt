@@ -105,9 +105,9 @@ public class DataDictionary(IEnumerable<KeyValuePair<string, IDataNode>> nodes) 
         return ((ICollection<KeyValuePair<string, IDataNode>>)nodes).Remove(item);
     }
 
-    public T AsSegment<T>(IDataSegmentTyper segmentTyper, IDataHandler handler)
+    /*public T AsSegment<T>(IDataSegmentTyper segmentTyper, IDataHandler handler)
         where T : class
-        => new DataSegment(segmentTyper, handler, this, typeof(T)).ActLike<T>();
+        => new DataSegment(segmentTyper, handler, this, typeof(T)).ActLike<T>();*/
 
     public IEnumerator<KeyValuePair<string, IDataNode>> GetEnumerator()
         => nodes.GetEnumerator();
