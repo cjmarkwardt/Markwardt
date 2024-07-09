@@ -103,71 +103,158 @@ public class IdSpace(IDataPointer data) : IIdSpace
 
     public async ValueTask<IList<int>> Allocate(int count)
     {
-        List<int> ids = new(count);
-
-        int availableIdCount = await ReadAvailableIdCount();
-        while (availableIdCount > 0 && ids.Count < count)
-        {
-            ids.Add(await ReadAvailableId(availableIdCount - 1));
-            availableIdCount--;
-        }
-
-        await WriteAvailableIdCount(availableIdCount);
-
+        IList<int> ids = await PopAvailableIds(count);
         if (ids.Count < count)
         {
-            int nextId = await ReadNextId();
-            while (ids.Count < count)
-            {
-                ids.Add(nextId);
-                nextId++;
-            }
-
-            await WriteNextId(nextId);
+            ids.Add(await GenerateIds(count - ids.Count));
         }
 
         return ids;
     }
 
     public async ValueTask Free(IEnumerable<int> ids)
-    {
-        int availableIdCount = await ReadAvailableIdCount();
-        foreach (int id in ids)
-        {
-            await WriteAvailableId(availableIdCount, id);
-            availableIdCount++;
-        }
-
-        await WriteAvailableIdCount(availableIdCount);
-    }
+        => await PushAvailableIds(ids);
 
     private async ValueTask<int> ReadNextId()
-        => (await data.ReadInteger(NextIdOffset)).Value;
+        => await data.ReadInteger(NextIdOffset);
 
     private async ValueTask WriteNextId(int value)
         => await data.WriteInteger(value, NextIdOffset);
 
     private async ValueTask<int> ReadAvailableIdCount()
-        => (await data.ReadInteger(AvailableIdCountOffset)).Value;
+        => await data.ReadInteger(AvailableIdCountOffset);
 
     private async ValueTask WriteAvailableIdCount(int value)
         => await data.WriteInteger(value, AvailableIdCountOffset);
 
-    private async ValueTask<int> ReadAvailableId(int index)
-        => (await data.ReadInteger(GetAvailableIdOffset(index))).Value;
+    private async ValueTask<IList<int>> ReadAvailableIds(int index, int count)
+        => await data.ReadIntegers(count, GetAvailableIdOffset(index));
 
-    private async ValueTask WriteAvailableId(int index, int value)
-        => await data.WriteInteger(value, GetAvailableIdOffset(index));
+    private async ValueTask WriteAvailableIds(int index, IEnumerable<int> values)
+        => await data.WriteIntegers(values, GetAvailableIdOffset(index));
+
+    private async ValueTask<IList<int>> PopAvailableIds(int count)
+    {
+        int availableIdCount = await ReadAvailableIdCount();
+        if (count > availableIdCount)
+        {
+            count = availableIdCount;
+        }
+
+        availableIdCount -= count;
+
+        IList<int> ids = await ReadAvailableIds(availableIdCount, count);
+        await WriteAvailableIdCount(availableIdCount);
+        return ids;
+    }
+
+    private async ValueTask PushAvailableIds(IEnumerable<int> values)
+    {
+        int availableIdCount = await ReadAvailableIdCount();
+        await WriteAvailableIds(availableIdCount, values);
+        await WriteAvailableIdCount(availableIdCount + values.Count());
+    }
+
+    private async ValueTask<IList<int>> GenerateIds(int count)
+    {
+        List<int> ids = new(count);
+        int nextId = await ReadNextId();
+        while (ids.Count < count)
+        {
+            ids.Add(nextId);
+            nextId++;
+        }
+
+        await WriteNextId(nextId);
+        return ids;
+    }
 }
 
 public interface IDataSpace
 {
-    ValueTask<(int Id, IDataPointer Data)> Create();
-    IDataPointer Open(int id);
+    ValueTask<IDataFilePointer> Create(int size = 0);
+    IDataFilePointer Open(int id);
+    ValueTask Resize(int id, int size);
     ValueTask Delete(int id);
 }
 
-public abstract class DataSpace(int blockSize, IDataPointer data) : IDataSpace
+public interface IDataSpaceGenerator
+{
+    ValueTask<IDataSpace> Create()
+    ValueTask<IDataSpace> Create();
+    ValueTask<IDataSpace> Load();
+}
+
+public class DataSpace(IDataPointer data, int blockDataSize, bool isFixedSize) : IDataSpace
+{
+    private IDataPointer Data { get; } = data;
+    private int BlockSize { get; } = blockDataSize;
+    private bool IsFixedSize { get; } = isFixedSize;
+    
+    public ValueTask<IDataFilePointer> Create(int size = 0)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IDataFilePointer Open(int id)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ValueTask Resize(int id, int size)
+    {
+        throw new NotImplementedException();
+    }
+
+    public ValueTask Delete(int id)
+    {
+        throw new NotImplementedException();
+    }
+
+    protected IDataPointer CreateBlockPointer(int block)
+        => Data.Copy().Move(block * BlockSize);
+
+    private sealed class IdPointer() : IDataPointer
+    {
+
+    }
+
+    private sealed class FilePointer(DataSpace space, IDataPointer data, int block) : IDataFilePointer
+    {
+        private DataSpace Space { get; } = space;
+        private IDataPointer Data { get; } = data;
+
+        public int Id => block;
+
+        public int Position { get; set; }
+
+        public IDataFilePointer Copy()
+            => new FilePointer(Space, Data.Copy(), block);
+
+        public async ValueTask Delete()
+            => await Space.Delete(Id);
+
+        public ValueTask Read(Memory<byte> destination, int length, int offset = 0, bool move = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ValueTask Resize(int size)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ValueTask Write(ReadOnlyMemory<byte> source, int offset = 0, bool move = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        IDataPointer IDataPointer.Copy()
+            => Copy();
+    }
+}
+
+public abstract class DataSpacel(int blockSize, IDataPointer data) : IDataSpace
 {
     private int allocationLength = 
     private int allocationChunkSize = 

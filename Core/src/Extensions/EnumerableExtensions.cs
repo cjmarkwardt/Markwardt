@@ -2,6 +2,38 @@ namespace Markwardt;
 
 public static class EnumerableExtensions
 {
+    public static IEnumerable<IList<T>> Chunk<T>(this IEnumerable<T> source, int chunkSize)
+    {
+        List<T>? chunk = null;
+        foreach (T item in source)
+        {
+            chunk ??= new(chunkSize);
+
+            chunk.Add(item);
+            if (chunk.Count == chunkSize)
+            {
+                yield return chunk;
+                chunk = null;
+            }
+        }
+    }
+
+    public static IEnumerable<ReadOnlyMemory<T>> Chunk<T>(this ReadOnlyMemory<T> source, int chunkSize)
+    {
+        for (int i = 0; i < source.Length; i += chunkSize)
+        {
+            yield return source.Slice(i, Math.Min(chunkSize, source.Length - i));
+        }
+    }
+
+    public static IEnumerable<Memory<T>> Chunk<T>(this Memory<T> source, int chunkSize)
+    {
+        for (int i = 0; i < source.Length; i += chunkSize)
+        {
+            yield return source.Slice(i, Math.Min(chunkSize, source.Length - i));
+        }
+    }
+    
     public static void Enumerate<T>(this IEnumerable<T> enumerable)
     {
         IEnumerator<T> enumerator = enumerable.GetEnumerator();
