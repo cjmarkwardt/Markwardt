@@ -180,20 +180,23 @@ public interface IDataSpace
 
 public interface IDataSpaceGenerator
 {
-    ValueTask<IDataSpace> Create()
-    ValueTask<IDataSpace> Create();
-    ValueTask<IDataSpace> Load();
+    ValueTask<IDataSpace> Create(IDataPointer data, int blockDataSize, bool isFixedSize);
 }
 
 public class DataSpace(IDataPointer data, int blockDataSize, bool isFixedSize) : IDataSpace
 {
+    private readonly Lazy<byte[]> empty = new(() => new byte[blockDataSize]);
+
+    private bool isInitialized;
+
     private IDataPointer Data { get; } = data;
     private int BlockSize { get; } = blockDataSize;
     private bool IsFixedSize { get; } = isFixedSize;
     
-    public ValueTask<IDataFilePointer> Create(int size = 0)
+    public async ValueTask<IDataFilePointer> Create(int size = 0)
     {
-        throw new NotImplementedException();
+        int block = await AllocateBlock();
+
     }
 
     public IDataFilePointer Open(int id)
@@ -211,12 +214,94 @@ public class DataSpace(IDataPointer data, int blockDataSize, bool isFixedSize) :
         throw new NotImplementedException();
     }
 
-    protected IDataPointer CreateBlockPointer(int block)
-        => Data.Copy().Move(block * BlockSize);
-
-    private sealed class IdPointer() : IDataPointer
+    private async ValueTask<Header> ReadHeader()
     {
+        if (!isInitialized)
+        {
+            isInitialized = true;
 
+            if (! await Data.Test(12))
+            {
+                Header header = new();
+                await WriteHeader(header);
+                return header;
+            }
+        }
+
+        IList<int> values = await Data.ReadIntegers(3);
+        return new Header { NewBlock = values[0], FirstFreeBlock = values[1], LastFreeBlock = values[2] };
+    }
+
+    private async ValueTask WriteHeader(Header header)
+        => await Data.WriteIntegers([header.NewBlock, header.FirstFreeBlock, header.LastFreeBlock]);
+
+    private long GetBlockOffset(int block)
+        => 8 + (block * BlockSize);
+
+    private async ValueTask<int> ReadBlockNext(int block)
+        => await Data.ReadInteger(GetBlockOffset(block));
+
+    private async ValueTask WriteBlockNext(int block, int nextBlock)
+        => await Data.WriteInteger(nextBlock, GetBlockOffset(block));
+
+    private async ValueTask<int> ReadFileLength(int fileId)
+        => await Data.ReadInteger(GetBlockOffset(fileId));
+
+    private async ValueTask WriteFileLength(int fileId, int length)
+        => await Data.WriteInteger(length, GetBlockOffset(fileId));
+
+    protected IDataPointer CreateBlockPointer(int block)
+        => Data.Copy().Move(8 + (block * BlockSize));
+
+    private async ValueTask<int> AllocateBlock()
+    {
+        int block;
+        Header header = await ReadHeader();
+        if (header.FirstFreeBlock != -1)
+        {
+            block = header.FirstFreeBlock;
+            Data.write
+
+            if (header.LastFreeBlock == block)
+            {
+                header.FirstFreeBlock = -1;
+                header.LastFreeBlock = -1;
+            }
+            else
+            {
+                header.FirstFreeBlock = await ReadBlockNext(block);
+            }
+        }
+        else
+        {
+            block = header.NewBlock;
+            header.NewBlock++;
+        }
+
+        await WriteHeader(header);
+        return block;
+    }
+
+    private async ValueTask FreeBlock(int block)
+    {
+        Header header = await ReadHeader();
+        if (header.LastFreeBlock != -1)
+        {
+            await WriteBlockNext(header.LastFreeBlock, block);
+        }
+        else
+        {
+            header.LastFreeBlock = block;
+        }
+
+        await WriteHeader(header);
+    }
+
+    private class Header
+    {
+        public int NewBlock { get; set; } = 0;
+        public int FirstFreeBlock { get; set; } = -1;
+        public int LastFreeBlock { get; set; } = -1;
     }
 
     private sealed class FilePointer(DataSpace space, IDataPointer data, int block) : IDataFilePointer
