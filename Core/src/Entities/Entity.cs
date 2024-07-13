@@ -22,3 +22,13 @@ public interface IEntity : IEquatable<IEntity>
     T GetSection<T>()
         where T : class;
 }
+
+public interface IEntityB
+{
+    string Id { get; }
+
+    bool HasTrait<T>();
+    T AddTrait<T>();
+    void DeleteTrait<T>();
+    T GetTrait<T>();
+}

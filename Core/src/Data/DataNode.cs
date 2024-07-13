@@ -1,18 +1,7 @@
 namespace Markwardt;
 
-public interface IDataNode
+public record DataNode(string? Type, DataKind Kind, object Value)
 {
-    bool PopChanges();
-}
-
-public static class DataNodeExtensions
-{
-    public static DataValue? AsValue(this IDataNode node)
-        => node is DataValue value ? value : null;
-
-    public static DataList? AsList(this IDataNode node)
-        => node as DataList;
-    
-    public static DataDictionary? AsDictionary(this IDataNode node)
-        => node as DataDictionary;
+    public T GetValue<T>()
+        => (T)Value;
 }

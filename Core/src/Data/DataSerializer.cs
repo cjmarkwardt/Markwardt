@@ -2,20 +2,22 @@ namespace Markwardt;
 
 public interface IDataSerializer
 {
-    object? Deserialize(string? data);
-    string? Serialize(object? value);
+    void Serialize(IDataWriter writer, object value);
+    object Deserialize(IDataReader reader);
 }
 
-public abstract class DataSerializer<T> : IDataSerializer
+public class TypeDataSerializer(Type type) : IDataSerializer
 {
-    public object? Deserialize(string? data)
-        => data is null ? null : Read(data);
+    public void Serialize(IDataWriter writer, object value)
+    {
+        if (value is DataSegment segment)
+        {
+            segment.Serialize(writer);
+        }
+    }
 
-    public string? Serialize(object? value)
-        => Write((T)value!);
-
-    protected abstract T Read(string data);
-
-    protected virtual string? Write(T value)
-        => value?.ToString();
+    public object Deserialize(IDataReader reader)
+    {
+        throw new NotImplementedException();
+    }
 }

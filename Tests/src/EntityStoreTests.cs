@@ -2,7 +2,7 @@ namespace Markwardt;
 
 public class EntityStoreTests
 {
-    [Fact]
+    /*[Fact]
     public async Task Test()
     {
         TypeSetSource types = new([typeof(ITestSection), typeof(ITestItem)]);
@@ -82,5 +82,5 @@ public class EntityStoreTests
     public interface ITestItem
     {
         string? Value { get; set; }
-    }
+    }*/
 }

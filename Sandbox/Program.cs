@@ -1,3 +1,4 @@
 ﻿using Markwardt;
 
-Console.WriteLine("Sandbox");
+MemoryStream stream = new();
+
