@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public delegate ValueTask<LiteDbStore> LiteDbStoreFactory(string path);
+/*public delegate ValueTask<LiteDbStore> LiteDbStoreFactory(string path);
 
 public class LiteDbStore : ExtendedDisposable, IDataStore
 {
@@ -57,4 +57,4 @@ public class LiteDbStore : ExtendedDisposable, IDataStore
             throw new NotSupportedException(input.GetType().Name);
         }
     }
-}
+}*/

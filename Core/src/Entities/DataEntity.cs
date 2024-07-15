@@ -2,10 +2,10 @@ namespace Markwardt;
 
 public interface IDataEntity : IEntity
 {
-    DataDictionary Data { get; }
+    //DataDictionary Data { get; }
 }
 
-public sealed class DataEntity(string id, IDataSegmentTyper segmentTyper, IDataHandler handler, DataDictionary data) : IDataEntity
+/*public sealed class DataEntity(string id, IDataSegmentTyper segmentTyper, IDataHandler handler, DataDictionary data) : IDataEntity
 {
     private readonly IModel model = data.AsSegment<IModel>(segmentTyper, handler);
 
@@ -50,4 +50,4 @@ public sealed class DataEntity(string id, IDataSegmentTyper segmentTyper, IDataH
         ISet<string> Flags { get; }
         ISegmentDictionary<string, object> Sections { get; }
     }
-}
+}*/

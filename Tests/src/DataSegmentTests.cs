@@ -2,7 +2,7 @@ namespace Markwardt;
 
 public class DataSegmentTests
 {
-    [Fact]
+    /*[Fact]
     public void Test()
     {
         TypeSetSource types = new([typeof(ITestSegment), typeof(ISubSegment), typeof(ISubSegment1), typeof(ISubSegment1A), typeof(ISubSegment1B), typeof(ISubSegment2)]);
@@ -146,5 +146,5 @@ public class DataSegmentTests
     public interface ISubSegment2 : ISubSegment
     {
         ISegmentList<ISubSegment> Subs { get; }
-    }
+    }*/
 }

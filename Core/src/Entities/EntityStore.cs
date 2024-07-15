@@ -2,8 +2,8 @@ namespace Markwardt;
 
 public interface IEntityStore : IEntityLoader, IMultiDisposable
 {
-    [Factory<EntityStore>]
-    delegate ValueTask<IEntityStore> Factory(IDataStore store, IEntityExpirationCalculator? expirationCalculator = null);
+    //[Factory<EntityStore>]
+    //delegate ValueTask<IEntityStore> Factory(IDataStore store, IEntityExpirationCalculator? expirationCalculator = null);
 
     EntityId GetId(string id);
     IEntityClaim Create(string? id = null);
@@ -16,7 +16,7 @@ public static class EntityStoreExtensions
         => await store.Load(store.GetId(id));
 }
 
-public class EntityStore : ExtendedDisposable, IEntityStore
+/*public class EntityStore : ExtendedDisposable, IEntityStore
 {
     public EntityStore(IDataSegmentTyper segmentTyper, IDataHandler handler, IEntityIdCreator idCreator, IDataStore store, IEntityExpirationCalculator? expirationCalculator = null)
     {
@@ -94,4 +94,4 @@ public class EntityStore : ExtendedDisposable, IEntityStore
 
     private async ValueTask Save(IEnumerable<IEntityHandle> handles)
         => await store.Save(handles.SelectMaybe(x => x.PopChanged()).Select(x => new KeyValuePair<string, DataDictionary>(x.Id.Value, x.Data)));
-}
+}*/

@@ -26,7 +26,7 @@ public sealed class EntityHandle(Task<IDataEntity> load, IEntityExpirationCalcul
 
     public Maybe<IDataEntity> PopChanged()
     {
-        if (!load.IsCompleted || !load.Result.Data.PopChanges())
+        if (!load.IsCompleted)
         {
             return default;
         }
