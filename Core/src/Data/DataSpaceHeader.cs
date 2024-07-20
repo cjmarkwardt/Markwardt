@@ -2,6 +2,13 @@ namespace Markwardt;
 
 public class DataSpaceHeader(IDataSpaceWriter writer)
 {
+    public static async ValueTask<DataSpaceHeader> Create(IDataSpaceWriter writer)
+    {
+        DataSpaceHeader header = new(writer);
+        await header.Read();
+        return header;
+    }
+
     private readonly DataBlock blockHeader = new(writer, true);
     private readonly Memory<byte> data = new byte[writer.HeaderSize];
 
@@ -49,6 +56,9 @@ public class DataSpaceHeader(IDataSpaceWriter writer)
         {
             index = NewBlock;
             NewBlock++;
+
+            blockHeader.Parameter = -1;
+            await blockHeader.Write(index);
         }
 
         return index;

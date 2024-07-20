@@ -7,7 +7,7 @@ public class DataBlock(IDataSpaceWriter writer, bool headerOnly)
     private readonly IDataSpaceWriter writer = writer;
     private readonly Memory<byte> data = new byte[headerOnly ? HeaderSize : writer.BlockSize];
 
-    public DataBlockType Type { get; set; }
+    public bool IsFinal { get; set; }
     public int Parameter { get; set; }
     
     public int MaxContentSize => writer.BlockSize - HeaderSize;
@@ -17,13 +17,13 @@ public class DataBlock(IDataSpaceWriter writer, bool headerOnly)
     {
         await writer.ReadBlock(index, data);
 
-        Type = (DataBlockType)data.Span.AsReadOnly().ReadByte(out _);
+        IsFinal = data.Span.AsReadOnly().ReadBool(out _);
         Parameter = data[1..].Span.AsReadOnly().ReadInt(out _);
     }
 
     public async ValueTask Write(int index)
     {
-        data.Span.WriteByte((byte)Type, out _);
+        data.Span.WriteBool(IsFinal, out _);
         data[1..].Span.WriteInt(Parameter, out _);
         
         await writer.WriteBlock(index, data);
