@@ -2,14 +2,29 @@ namespace Markwardt;
 
 public class DataHeaderWriter(IDataSpaceWriter writer)
 {
+    public static int Size => sizeof(int) * 3;
+
     private readonly DataBlockWriter blockHeader = new(writer, true);
-    private readonly Memory<byte> data = new byte[writer.HeaderSize];
+    private readonly Memory<byte> data = new byte[Size];
 
     private bool isRead;
     private bool isModified;
     private int newBlock;
     private int firstFreeBlock;
     private int lastFreeBlock;
+
+    public async ValueTask Initialize()
+    {
+        isRead = true;
+        isModified = true;
+        newBlock = 1;
+        firstFreeBlock = -1;
+        lastFreeBlock = -1;
+        await Write();
+
+        blockHeader.SetFinal(0);
+        await blockHeader.Write(0);
+    }
 
     public async ValueTask WriteNextBlock(int index, int nextBlock)
     {
@@ -87,16 +102,6 @@ public class DataHeaderWriter(IDataSpaceWriter writer)
 
     private async ValueTask Read()
     {
-        if (!writer.IsInitialized)
-        {
-            isRead = true;
-            isModified = true;
-            newBlock = 1;
-            firstFreeBlock = -1;
-            lastFreeBlock = -1;
-            await Write();
-        }
-        
         if (!isRead)
         {
             isRead = true;

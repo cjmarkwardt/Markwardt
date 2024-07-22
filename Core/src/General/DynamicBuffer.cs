@@ -35,7 +35,11 @@ public class DynamicBuffer : IDynamicBuffer
     {
         if (buffer.Length < length)
         {
+            Memory<byte> previousBuffer = buffer;
             buffer = new byte[length];
+
+            Data.CopyTo(buffer);
+            Data = buffer.AsMemory()[..Data.Length];
         }
     }
 

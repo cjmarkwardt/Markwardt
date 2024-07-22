@@ -19,8 +19,6 @@ public static class DataSpaceExtensions
 
 public class DataSpace : IDataSpace, IDataSpaceWriter
 {
-    private static int HeaderSize => sizeof(int) * 3;
-
     public DataSpace(Stream stream, int blockSize)
     {
         this.stream = stream;
@@ -41,13 +39,14 @@ public class DataSpace : IDataSpace, IDataSpaceWriter
     private readonly DataBlockWriter block;
     private readonly SequentialExecutor executor = new();
 
-    bool IDataSpaceWriter.IsInitialized => stream.Length >= HeaderSize;
-    int IDataSpaceWriter.HeaderSize => HeaderSize;
+    private bool isInitialized;
+
     int IDataSpaceWriter.BlockSize => blockSize;
 
     public async ValueTask Load(int id, IDynamicBuffer destination)
         => await executor.Execute(async () =>
         {
+            await TryInitialize();
             destination.Clear();
 
             int index = id;
@@ -62,6 +61,7 @@ public class DataSpace : IDataSpace, IDataSpaceWriter
     public async ValueTask<int> Create(ReadOnlyMemory<byte>? source = null)
         => await executor.Execute(async () =>
         {
+            await TryInitialize();
             int id = await header.Allocate();
             await SetData(id, source);
             await header.Write();
@@ -71,6 +71,7 @@ public class DataSpace : IDataSpace, IDataSpaceWriter
     public async ValueTask Save(int id, ReadOnlyMemory<byte> source)
         => await executor.Execute(async () =>
         {
+            await TryInitialize();
             await SetData(id, source);
             await header.Write();
         });
@@ -78,12 +79,26 @@ public class DataSpace : IDataSpace, IDataSpaceWriter
     public async ValueTask Delete(int id)
         => await executor.Execute(async () =>
         {
+            await TryInitialize();
             await header.Free(id);
             await header.Write();
         });
+
+    private async ValueTask TryInitialize()
+    {
+        if (!isInitialized)
+        {
+            isInitialized = true;
+
+            if (stream.ReadByte() == -1)
+            {
+                await header.Initialize();
+            }
+        }
+    }
     
     private long GetBlockOffset(int index)
-        => HeaderSize + ((long)index * blockSize);
+        => DataHeaderWriter.Size + ((long)index * blockSize);
 
     private async ValueTask SetData(int id, ReadOnlyMemory<byte>? source)
     {
