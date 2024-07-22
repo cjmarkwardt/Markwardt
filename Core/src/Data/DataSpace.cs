@@ -2,8 +2,8 @@ namespace Markwardt;
 
 public interface IDataSpace
 {
-    ValueTask Load(int id, IDynamicBuffer destination);
     ValueTask<int> Create(ReadOnlyMemory<byte>? source = null);
+    ValueTask Load(int id, IDynamicBuffer destination);
     ValueTask Save(int id, ReadOnlyMemory<byte> source);
     ValueTask Delete(int id);
 }
@@ -77,12 +77,19 @@ public class DataSpace : IDataSpace, IDataSpaceWriter
         });
 
     public async ValueTask Delete(int id)
-        => await executor.Execute(async () =>
+    {
+        if (id == 0)
+        {
+            throw new InvalidOperationException("Cannot delete root");
+        }
+
+        await executor.Execute(async () =>
         {
             await TryInitialize();
             await header.Free(id);
             await header.Write();
         });
+    }
 
     private async ValueTask TryInitialize()
     {
