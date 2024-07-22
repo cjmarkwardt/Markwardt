@@ -2,6 +2,7 @@ namespace Markwardt;
 
 public interface IDataSpaceWriter
 {
+    bool IsInitialized { get; }
     int HeaderSize { get; }
     int BlockSize { get; }
 

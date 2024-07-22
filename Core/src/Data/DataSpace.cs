@@ -26,62 +26,58 @@ public class DataSpace : IDataSpace, IDataSpaceWriter
         this.stream = stream;
         this.blockSize = blockSize;
 
-        header = new(async () => await DataSpaceHeader.Create(this));
+        header = new(this);
         block = new(this, false);
+
+        if (block.MaxContentSize < 1)
+        {
+            throw new InvalidOperationException($"Block size of {blockSize} is too small");
+        }
     }
 
     private readonly Stream stream;
     private readonly int blockSize;
-    private readonly AsyncLazy<DataSpaceHeader> header;
-    private readonly DataBlock block;
+    private readonly DataHeaderWriter header;
+    private readonly DataBlockWriter block;
     private readonly SequentialExecutor executor = new();
 
+    bool IDataSpaceWriter.IsInitialized => stream.Length >= HeaderSize;
     int IDataSpaceWriter.HeaderSize => HeaderSize;
     int IDataSpaceWriter.BlockSize => blockSize;
 
     public async ValueTask Load(int id, IDynamicBuffer destination)
         => await executor.Execute(async () =>
         {
-            int nextBlock = id;
             destination.Clear();
-            do
+
+            int index = id;
+            while (index != -1)
             {
-                MoveToBlock(nextBlock);
-                await stream.ReadAsync(block);
-
-                Memory<byte> content;
-                if (nextBlock == -1)
-                {
-                    ushort length = BitConverter.ToUInt16(block[8..].Span);
-                    content = block.Slice(10, length);
-                }
-                else
-                {
-                    content = block[8..];
-                }
-
-                destination.AppendFrom(content.Span);
+                await block.Read(index);
+                destination.AppendFrom(block.Content.Span);
+                index = block.NextBlock;
             }
-            while (nextBlock != -1);
         });
 
     public async ValueTask<int> Create(ReadOnlyMemory<byte>? source = null)
         => await executor.Execute(async () =>
         {
-            await header.Read();
             int id = await header.Allocate();
-            await header.Write();
             await SetData(id, source);
+            await header.Write();
             return id;
         });
 
     public async ValueTask Save(int id, ReadOnlyMemory<byte> source)
-        => await executor.Execute(async () => await SetData(id, source));
+        => await executor.Execute(async () =>
+        {
+            await SetData(id, source);
+            await header.Write();
+        });
 
     public async ValueTask Delete(int id)
         => await executor.Execute(async () =>
         {
-            await header.Read();
             await header.Free(id);
             await header.Write();
         });
@@ -91,49 +87,37 @@ public class DataSpace : IDataSpace, IDataSpaceWriter
 
     private async ValueTask SetData(int id, ReadOnlyMemory<byte>? source)
     {
-        if (source is null)
-        {
+        source ??= Array.Empty<byte>();
 
-            space.block.NextBlock = -1;
-            space.block.ContentLength = 0;
-            await space.block.Write(id, false);
-        }
-        else
+        int index = id;
+        while (index != -1)
         {
-            int index = id;
-            while (true)
+            int nextBlock = await header.ReadNextBlock(index);
+
+            if (source.Value.Length <= block.MaxContentSize)
             {
-                if (source.Value.Length <= space.block.MaxContentLength)
+                if (nextBlock != -1)
                 {
-                    await space.block.Read(index, false);
-                    if (space.block.NextBlock != -1)
-                    {
-                        await space.header.Free(space.block.NextBlock);
-                    }
-
-                    space.block.NextBlock = -1;
-                    space.block.ContentLength = (ushort)source.Value.Length;
-                    source.Value.CopyTo(space.block.Content);
-                    await space.block.Write(index, true);
-                    break;
-                }
-                else
-                {
-                    space.block.NextBlock = await space.header.Allocate();
-                    space.block.ContentLength = 0;
-                    source.Value[..space.block.MaxContentLength].CopyTo(space.block.Content);
-                    source = source.Value[space.block.MaxContentLength..];
+                    await header.Free(nextBlock);
                 }
 
+                block.SetFinal(source.Value.Length);
+                source.Value.CopyTo(block.Content);
+                await block.Write(index);
+                break;
+            }
+            else
+            {
+                if (nextBlock == -1)
+                {
+                    nextBlock = await header.Allocate();
+                }
 
-                if (nextBlock is not null)
-                {
-                    index = nextBlock.Value;
-                }
-                else
-                {
-                    break;
-                }
+                block.SetContinuation(nextBlock);
+                source.Value[..block.MaxContentSize].CopyTo(block.Content);
+                await block.Write(index);
+                source = source.Value[block.MaxContentSize..];
+                index = nextBlock;
             }
         }
     }

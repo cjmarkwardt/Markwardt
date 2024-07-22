@@ -31,18 +31,6 @@ public class DynamicBuffer : IDynamicBuffer
 
     public Memory<byte> Data { get; private set; }
 
-    public int Length
-    {
-        get => Data.Length;
-        set
-        {
-            if (Data.Length != value)
-            {
-                Data = new byte[value];
-            }
-        }
-    }
-
     public void Prepare(int length)
     {
         if (buffer.Length < length)
@@ -54,7 +42,7 @@ public class DynamicBuffer : IDynamicBuffer
     public void FillFrom(ReadOnlySpan<byte> source)
     {
         Prepare(source.Length);
-        Data = buffer.AsMemory().Slice(0, source.Length);
+        Data = buffer.AsMemory()[..source.Length];
         source.CopyTo(Data.Span);
     }
 
@@ -63,7 +51,7 @@ public class DynamicBuffer : IDynamicBuffer
         int previousLength = Data.Length;
         int length = previousLength + source.Length;
         Prepare(length);
-        Data = buffer.AsMemory().Slice(0, length);
+        Data = buffer.AsMemory()[..length];
         source.CopyTo(Data.Span.Slice(previousLength));
     }
 
