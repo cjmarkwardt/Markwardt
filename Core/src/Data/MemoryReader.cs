@@ -12,7 +12,7 @@ public class MemoryReader(ReadOnlyMemory<byte> source) : IMemoryReader
 
     public void Read(int length, IDynamicBuffer destination)
     {
-        destination.AppendFrom(source.Slice(position, length).Span);
+        destination.Append(source.Slice(position, length).Span);
         position += length;
     }
 }

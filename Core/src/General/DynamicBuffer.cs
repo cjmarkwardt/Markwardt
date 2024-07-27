@@ -27,13 +27,13 @@ public static class DynamicBufferExtensions
         }
     }
     
-    public static void FillFrom(this IDynamicBuffer buffer, ReadOnlySpan<byte> source)
+    public static void Fill(this IDynamicBuffer buffer, ReadOnlySpan<byte> source)
     {
         buffer.Length = source.Length;
         source.CopyTo(buffer.Data);
     }
     
-    public static void AppendFrom(this IDynamicBuffer buffer, ReadOnlySpan<byte> source)
+    public static void Append(this IDynamicBuffer buffer, ReadOnlySpan<byte> source)
     {
         int previousLength = buffer.Data.Length;
         int length = previousLength + source.Length;

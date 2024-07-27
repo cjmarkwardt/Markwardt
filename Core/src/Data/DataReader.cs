@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IDataReader
+public interface IDataRefader
 {
     Stream? Source { get; set; }
 

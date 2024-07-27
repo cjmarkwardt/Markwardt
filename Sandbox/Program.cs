@@ -11,7 +11,7 @@ Console.WriteLine(value);
 return;
 
 MemoryStream stream = new();
-DataWriter writer = new(stream);
+DataTransformer writer = new(stream);
 writer.WriteInteger(5000000000000000000);
 
 DataReader reader = new(stream.ToArray());

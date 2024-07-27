@@ -53,7 +53,7 @@ public class DataSpace : IDataSpace, IDataSpaceWriter
             while (index != -1)
             {
                 await block.Read(index);
-                destination.AppendFrom(block.Content.Span);
+                destination.Append(block.Content.Span);
                 index = block.NextBlock;
             }
         });

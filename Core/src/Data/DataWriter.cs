@@ -1,11 +1,22 @@
 namespace Markwardt;
 
-public interface IDataWriter
+public interface IDataTransformer : IDataWriter
+{
+    Stream? Target { get; set; }
+}
+
+public interface IDataBuffered
 {
     IDynamicBuffer Buffer { get; }
+}
 
-    Stream? Destination { get; set; }
+public interface IDataReader : IDataBuffered
+{
+    object? Read(IDynamicBuffer? buffer = null);
+}
 
+public interface IDataWriter : IDataBuffered
+{
     void WriteNull();
     void WriteBoolean(bool? value);
     void WriteInteger(BigInteger? value);
@@ -13,7 +24,7 @@ public interface IDataWriter
     void WriteDouble(double? value);
     void WriteString(string? value);
     void WriteBlock(ReadOnlySpan<byte> value);
-    void WriteBlock();
+    void WriteBlock(Action<IDynamicBuffer> write);
     void WriteStart();
     void WriteEnd();
     void WriteType(string name);
@@ -32,65 +43,40 @@ public interface IDataWriter
     }
 }
 
-public class DataWriter : IDataWriter
+public class DataTransformer : IDataTransformer
 {
     private readonly DirectDataTransformer transformer = new();
 
-    public Stream? Destination { get; set; }
+    public Stream? Target { get; set; }
+
+    public IDynamicBuffer Buffer => transformer.Buffer;
 
     public void WriteNull()
-        => WriteDirectKind(DataKind.Null);
+        => transformer.WriteKind(DataKind.Null);
 
     public void WriteBoolean(bool? value)
-    {
-        if (value is null)
-        {
-            WriteNull();
-        }
-        else
-        {
-            WriteDirectKind(value.Value ? DataKind.True : DataKind.False);
-        }
-    }
+        => WriteNullable(value, x => transformer.WriteKind(x ? DataKind.True : DataKind.False));
 
     public void WriteInteger(BigInteger? value)
-    {
-        if (value is null)
+        => WriteNullable(value, x =>
         {
-            WriteNull();
-        }
-        else
-        {
-            WriteDirectKind(DataKind.Integer);
-            WriteDirectInteger(value.Value);
-        }
-    }
+            transformer.WriteKind(DataKind.Integer);
+            transformer.WriteInteger(x);
+        });
 
     public void WriteSingle(float? value)
-    {
-        if (value is null)
+        => WriteNullable(value, x =>
         {
-            WriteNull();
-        }
-        else
-        {
-            WriteDirectKind(DataKind.Single);
-            WriteDirectSingle(value.Value);
-        }
-    }
+            transformer.WriteKind(DataKind.Single);
+            transformer.WriteSingle(x);
+        });
 
     public void WriteDouble(double? value)
-    {
-        if (value is null)
+        => WriteNullable(value, x =>
         {
-            WriteNull();
-        }
-        else
-        {
-            WriteDirectKind(DataKind.Double);
-            WriteDirectDouble(value.Value);
-        }
-    }
+            transformer.WriteKind(DataKind.Double);
+            transformer.WriteDouble(x);
+        });
 
     public void WriteString(string? value)
     {
@@ -100,75 +86,49 @@ public class DataWriter : IDataWriter
         }
         else
         {
-            WriteDirectKind(DataKind.String);
-            WriteDirectString(value);
+            transformer.WriteKind(DataKind.String);
+            transformer.WriteString(value);
         }
     }
 
     public void WriteBlock(ReadOnlySpan<byte> value)
     {
-        WriteDirectKind(DataKind.Block);
-        WriteDirectBlock(value);
+        transformer.WriteKind(DataKind.Block);
+        transformer.WriteBlock(value);
     }
 
+    public void WriteBufferBlock()
+        => WriteBlock(Buffer.Data);
+
     public void WriteStart()
-        => WriteDirectKind(DataKind.Start);
+        => transformer.WriteKind(DataKind.Start);
 
     public void WriteEnd()
-        => WriteDirectKind(DataKind.End);
+        => transformer.WriteKind(DataKind.End);
 
     public void WriteType(string name)
     {
-        WriteDirectKind(DataKind.Type);
-        WriteDirectString(name);
+        transformer.WriteKind(DataKind.Type);
+        transformer.WriteString(name);
     }
 
     public void WriteProperty(string name)
     {
-        WriteDirectKind(DataKind.Property);
-        WriteDirectString(name);
+        transformer.WriteKind(DataKind.Property);
+        transformer.WriteString(name);
     }
 
-    private void WriteDirectKind(DataKind kind)
-        => Destination?.WriteByte((byte)kind);
-
-    private void WriteDirectBytes(ReadOnlySpan<byte> source)
-        => Destination?.Write(source);
-
-    private void WriteDirectSingle(float value)
+    private void WriteNullable<T>(T? value, DataKind kind, Action<T>? write)
+        where T : struct
     {
-        if (Destination is not null)
+        if (value is null)
         {
-            BitConverter.TryWriteBytes(buffer.Span, value);
-            Destination.Write(buffer.Span[..4]);
+            WriteNull();
+        }
+        else
+        {
+            transformer.WriteKind(kind);
+            write?.Invoke(value.Value);
         }
     }
-
-    private void WriteDirectDouble(double value)
-    {
-        if (Destination is not null)
-        {
-            BitConverter.TryWriteBytes(buffer.Span, value);
-            Destination.Write(buffer.Span[..8]);
-        }
-    }
-
-    private void WriteDirectInteger(BigInteger value)
-    {
-        if (Destination is not null)
-        {
-            value.TryWriteBytes(buffer.Span, out int length);
-            Destination.WriteByte((byte)length);
-            WriteDirectBytes(buffer.Span[..length]);
-        }
-    }
-
-    private void WriteDirectBlock(ReadOnlySpan<byte> source)
-    {
-        WriteDirectInteger(source.Length);
-        WriteDirectBytes(source);
-    }
-
-    private void WriteDirectString(string value)
-        => WriteDirectBlock(Encoding.UTF8.GetBytes(value));
 }
