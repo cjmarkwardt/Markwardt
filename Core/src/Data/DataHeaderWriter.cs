@@ -92,9 +92,9 @@ public class DataHeaderWriter(IDataSpaceWriter writer)
         {
             isModified = false;
 
-            data.Span.WriteInt(newBlock, out _);
-            data[4..].Span.WriteInt(firstFreeBlock, out _);
-            data[8..].Span.WriteInt(lastFreeBlock, out _);
+            BitConverter.TryWriteBytes(data.Span, newBlock);
+            BitConverter.TryWriteBytes(data.Span[4..], firstFreeBlock);
+            BitConverter.TryWriteBytes(data.Span[8..], lastFreeBlock);
 
             await writer.WriteHeader(data);
         }
@@ -108,9 +108,9 @@ public class DataHeaderWriter(IDataSpaceWriter writer)
 
             await writer.ReadHeader(data);
 
-            newBlock = data.Span.AsReadOnly().ReadInt(out _);
-            firstFreeBlock = data[4..].Span.AsReadOnly().ReadInt(out _);
-            lastFreeBlock = data[8..].Span.AsReadOnly().ReadInt(out _);
+            newBlock = BitConverter.ToInt32(data.Span);
+            firstFreeBlock = BitConverter.ToInt32(data.Span[4..]);
+            lastFreeBlock = BitConverter.ToInt32(data.Span[8..]);
         }
     }
 }

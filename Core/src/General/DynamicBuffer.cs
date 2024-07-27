@@ -1,25 +1,56 @@
 namespace Markwardt;
 
-public interface IDynamicAppendBuffer
-{
-    void AppendFrom(ReadOnlySpan<byte> source);
-}
-
 public interface IDynamicBuffer
 {
-    Memory<byte> Data { get; }
+    Span<byte> Data { get; }
 
-    void Prepare(int length);
-    void FillFrom(ReadOnlySpan<byte> source);
-    void AppendFrom(ReadOnlySpan<byte> source);
-    void Clear();
+    int Capacity { get; set; }
+    int Length { get; set; }
+
+    void Reset();
+}
+
+public static class DynamicBufferExtensions
+{
+    public static bool IsOverflow(this IDynamicBuffer buffer, int length)
+        => length > buffer.Capacity;
+
+    public static void Enlarge(this IDynamicBuffer buffer, int length)
+    {
+        Span<byte> oldData = buffer.Data;
+        bool isOverflow = buffer.IsOverflow(length);
+        buffer.Length = length;
+
+        if (isOverflow)
+        {
+            oldData.CopyTo(buffer.Data);
+        }
+    }
+    
+    public static void FillFrom(this IDynamicBuffer buffer, ReadOnlySpan<byte> source)
+    {
+        buffer.Length = source.Length;
+        source.CopyTo(buffer.Data);
+    }
+    
+    public static void AppendFrom(this IDynamicBuffer buffer, ReadOnlySpan<byte> source)
+    {
+        int previousLength = buffer.Data.Length;
+        int length = previousLength + source.Length;
+        buffer.Enlarge(length);
+        source.CopyTo(buffer.Data[previousLength..]);
+    }
+
+    public static void Clear(this IDynamicBuffer buffer)
+        => buffer.Length = 0;
 }
 
 public class DynamicBuffer : IDynamicBuffer
 {
-    public DynamicBuffer(int size)
+    public DynamicBuffer(int defaultLength)
     {
-        buffer = new byte[size];
+        this.defaultLength = defaultLength;
+        buffer = new byte[defaultLength];
     }
 
     public DynamicBuffer()
@@ -27,38 +58,40 @@ public class DynamicBuffer : IDynamicBuffer
         buffer = [];
     }
 
+    private readonly int defaultLength;
+
     private byte[] buffer;
+    private int length;
 
-    public Memory<byte> Data { get; private set; }
+    public Span<byte> Data => buffer.AsSpan(0, length);
 
-    public void Prepare(int length)
+    public int Capacity
     {
-        if (buffer.Length < length)
+        get => buffer.Length;
+        set
         {
-            Memory<byte> previousBuffer = buffer;
-            buffer = new byte[length];
-
-            Data.CopyTo(buffer);
-            Data = buffer.AsMemory()[..Data.Length];
+            if (value != Capacity)
+            {
+                buffer = new byte[value];
+                length = 0;
+            }
         }
     }
 
-    public void FillFrom(ReadOnlySpan<byte> source)
+    public int Length
     {
-        Prepare(source.Length);
-        Data = buffer.AsMemory()[..source.Length];
-        source.CopyTo(Data.Span);
+        get => length;
+        set
+        {
+            if (value > Capacity)
+            {
+                Capacity = value;
+            }
+
+            length = value;
+        }
     }
 
-    public void AppendFrom(ReadOnlySpan<byte> source)
-    {
-        int previousLength = Data.Length;
-        int length = previousLength + source.Length;
-        Prepare(length);
-        Data = buffer.AsMemory()[..length];
-        source.CopyTo(Data.Span.Slice(previousLength));
-    }
-
-    public void Clear()
-        => Data = Memory<byte>.Empty;
+    public void Reset()
+        => Length = defaultLength;
 }

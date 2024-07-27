@@ -26,19 +26,19 @@ public class DataBlockWriter(IDataSpaceWriter writer, bool headerOnly)
         parameter = nextBlock;
     }
 
+    public async ValueTask Write(int index)
+    {
+        data.Span[0] = (byte)(isFinal ? 1 : 0);
+        BitConverter.TryWriteBytes(data.Span[1..], parameter);
+        
+        await writer.WriteBlock(index, data);
+    }
+
     public async ValueTask Read(int index)
     {
         await writer.ReadBlock(index, data);
 
-        isFinal = data.Span.AsReadOnly().ReadBool(out _);
-        parameter = data[1..].Span.AsReadOnly().ReadInt(out _);
-    }
-
-    public async ValueTask Write(int index)
-    {
-        data.Span.WriteBool(isFinal, out _);
-        data[1..].Span.WriteInt(parameter, out _);
-        
-        await writer.WriteBlock(index, data);
+        isFinal = data.Span[0] == 1;
+        parameter = BitConverter.ToInt32(data.Span[1..]);
     }
 }
