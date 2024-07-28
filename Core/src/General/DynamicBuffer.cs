@@ -2,7 +2,7 @@ namespace Markwardt;
 
 public interface IDynamicBuffer
 {
-    Span<byte> Data { get; }
+    Memory<byte> Data { get; }
 
     int Capacity { get; set; }
     int Length { get; set; }
@@ -17,7 +17,7 @@ public static class DynamicBufferExtensions
 
     public static void Enlarge(this IDynamicBuffer buffer, int length)
     {
-        Span<byte> oldData = buffer.Data;
+        Memory<byte> oldData = buffer.Data;
         bool isOverflow = buffer.IsOverflow(length);
         buffer.Length = length;
 
@@ -30,7 +30,7 @@ public static class DynamicBufferExtensions
     public static void Fill(this IDynamicBuffer buffer, ReadOnlySpan<byte> source)
     {
         buffer.Length = source.Length;
-        source.CopyTo(buffer.Data);
+        source.CopyTo(buffer.Data.Span);
     }
     
     public static void Append(this IDynamicBuffer buffer, ReadOnlySpan<byte> source)
@@ -38,7 +38,7 @@ public static class DynamicBufferExtensions
         int previousLength = buffer.Data.Length;
         int length = previousLength + source.Length;
         buffer.Enlarge(length);
-        source.CopyTo(buffer.Data[previousLength..]);
+        source.CopyTo(buffer.Data[previousLength..].Span);
     }
 
     public static void Clear(this IDynamicBuffer buffer)
@@ -63,7 +63,7 @@ public class DynamicBuffer : IDynamicBuffer
     private byte[] buffer;
     private int length;
 
-    public Span<byte> Data => buffer.AsSpan(0, length);
+    public Memory<byte> Data => buffer.AsMemory(0, length);
 
     public int Capacity
     {

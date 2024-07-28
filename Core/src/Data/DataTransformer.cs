@@ -1,21 +1,16 @@
 namespace Markwardt;
 
-public interface IDataTransformer : IDataWriter
+public interface IDataTransformer : IDataWriter, IDataReader
 {
     Stream? Target { get; set; }
 }
 
-public interface IDataBuffered
-{
-    IDynamicBuffer Buffer { get; }
-}
-
-public interface IDataReader : IDataBuffered
+public interface IDataReader
 {
     object? Read(IDynamicBuffer? buffer = null);
 }
 
-public interface IDataWriter : IDataBuffered
+public interface IDataWriter
 {
     void WriteNull();
     void WriteBoolean(bool? value);
@@ -49,34 +44,59 @@ public class DataTransformer : IDataTransformer
 
     public Stream? Target { get; set; }
 
-    public IDynamicBuffer Buffer => transformer.Buffer;
-
     public void WriteNull()
         => transformer.WriteKind(DataKind.Null);
 
     public void WriteBoolean(bool? value)
-        => WriteNullable(value, x => transformer.WriteKind(x ? DataKind.True : DataKind.False));
+    {
+        if (value is null)
+        {
+            WriteNull();
+        }
+        else
+        {
+            transformer.WriteKind(value.Value ? DataKind.True : DataKind.False);
+        }
+    }
 
     public void WriteInteger(BigInteger? value)
-        => WriteNullable(value, x =>
+    {
+        if (value is null)
+        {
+            WriteNull();
+        }
+        else
         {
             transformer.WriteKind(DataKind.Integer);
-            transformer.WriteInteger(x);
-        });
+            transformer.WriteInteger(value.Value);
+        }
+    }
 
     public void WriteSingle(float? value)
-        => WriteNullable(value, x =>
+    {
+        if (value is null)
+        {
+            WriteNull();
+        }
+        else
         {
             transformer.WriteKind(DataKind.Single);
-            transformer.WriteSingle(x);
-        });
+            transformer.WriteSingle(value.Value);
+        }
+    }
 
     public void WriteDouble(double? value)
-        => WriteNullable(value, x =>
+    {
+        if (value is null)
+        {
+            WriteNull();
+        }
+        else
         {
             transformer.WriteKind(DataKind.Double);
-            transformer.WriteDouble(x);
-        });
+            transformer.WriteDouble(value.Value);
+        }
+    }
 
     public void WriteString(string? value)
     {
@@ -97,8 +117,11 @@ public class DataTransformer : IDataTransformer
         transformer.WriteBlock(value);
     }
 
-    public void WriteBufferBlock()
-        => WriteBlock(Buffer.Data);
+    public void WriteBlock(Action<IDynamicBuffer> write)
+    {
+        transformer.WriteKind(DataKind.Block);
+        transformer.WriteBlock(write);
+    }
 
     public void WriteStart()
         => transformer.WriteKind(DataKind.Start);
@@ -118,17 +141,21 @@ public class DataTransformer : IDataTransformer
         transformer.WriteString(name);
     }
 
-    private void WriteNullable<T>(T? value, DataKind kind, Action<T>? write)
-        where T : struct
-    {
-        if (value is null)
+    public object? Read(IDynamicBuffer? buffer = null)
+        => transformer.ReadKind() switch
         {
-            WriteNull();
-        }
-        else
-        {
-            transformer.WriteKind(kind);
-            write?.Invoke(value.Value);
-        }
-    }
+            DataKind.Null => null,
+            DataKind.False => false,
+            DataKind.True => true,
+            DataKind.Integer => transformer.ReadInteger(),
+            DataKind.Single => transformer.ReadSingle(),
+            DataKind.Double => transformer.ReadDouble(),
+            DataKind.String => transformer.ReadString(),
+            DataKind.Block => transformer.ReadBlock(buffer),
+            DataKind.Start => DataSignal.Start,
+            DataKind.End => DataSignal.End,
+            DataKind.Type => new DataTypeSignal(transformer.ReadString()),
+            DataKind.Property => new DataPropertySignal(transformer.ReadString()),
+            DataKind kind => throw new NotSupportedException(kind.ToString()),
+        };
 }
