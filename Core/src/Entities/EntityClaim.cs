@@ -1,8 +1,8 @@
 namespace Markwardt;
 
-public interface IEntityClaim : IEntity, IDisposable;
+public interface IEntityClaim : IEntityOld, IDisposable;
 
-public sealed class EntityClaim(IEntity entity, Action dispose) : IEntityClaim
+public sealed class EntityClaim(IEntityOld entity, Action dispose) : IEntityClaim
 {
     private bool isDisposed;
 
@@ -32,8 +32,8 @@ public sealed class EntityClaim(IEntity entity, Action dispose) : IEntityClaim
         where T : class
         => GetEntity().GetSection<T>();
 
-    public bool Equals(IEntity? other) => entity.Equals(other);
-    public override bool Equals(object? obj) => obj is IEntity other && Equals(other);
+    public bool Equals(IEntityOld? other) => entity.Equals(other);
+    public override bool Equals(object? obj) => obj is IEntityOld other && Equals(other);
     public override int GetHashCode() => Id.GetHashCode();
 
     public void Dispose()
@@ -45,6 +45,6 @@ public sealed class EntityClaim(IEntity entity, Action dispose) : IEntityClaim
         }
     }
 
-    private IEntity GetEntity()
+    private IEntityOld GetEntity()
         => !isDisposed ? entity : throw new ObjectDisposedException(GetType().Name);
 }

@@ -2,13 +2,13 @@ namespace Markwardt;
 
 public class DataSpaceTests
 {
-    private static DataSpace CreateTestSpace(int blockSize)
+    private static DataStore CreateTestSpace(int blockSize)
         => new(new MemoryStream(), blockSize);
 
     [Fact]
     public async Task CreateAndLoad()
     {
-        DataSpace space = CreateTestSpace(10);
+        DataStore space = CreateTestSpace(10);
         string data = "some test data";
         int id = await space.Create(Encoding.UTF8.GetBytes(data));
 
@@ -20,7 +20,7 @@ public class DataSpaceTests
     [Fact]
     public async Task SaveAndLoadRoot()
     {
-        DataSpace space = CreateTestSpace(10);
+        DataStore space = CreateTestSpace(10);
         string data = "some other test data";
         await space.SaveRoot(Encoding.UTF8.GetBytes(data));
 
@@ -32,7 +32,7 @@ public class DataSpaceTests
     [Fact]
     public async Task Replacement()
     {
-        DataSpace space = CreateTestSpace(10);
+        DataStore space = CreateTestSpace(10);
         string initialData2 = "test data!";
         string finalDataRoot = "test test test test test test test test";
         string finalData1 = "yet another test data";

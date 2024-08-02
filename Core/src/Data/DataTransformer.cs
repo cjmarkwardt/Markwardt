@@ -5,44 +5,11 @@ public interface IDataTransformer : IDataWriter, IDataReader
     Stream? Target { get; set; }
 }
 
-public interface IDataReader
-{
-    object? Read(IDynamicBuffer? buffer = null);
-}
-
-public interface IDataWriter
-{
-    void WriteNull();
-    void WriteBoolean(bool? value);
-    void WriteInteger(BigInteger? value);
-    void WriteSingle(float? value);
-    void WriteDouble(double? value);
-    void WriteString(string? value);
-    void WriteBlock(ReadOnlySpan<byte> value);
-    void WriteBlock(Action<IDynamicBuffer> write);
-    void WriteStart();
-    void WriteEnd();
-    void WriteType(string name);
-    void WriteProperty(string name);
-
-    void WriteBlock(ReadOnlyMemory<byte>? value)
-    {
-        if (value is null)
-        {
-            WriteNull();
-        }
-        else
-        {
-            WriteBlock(value.Value.Span);
-        }
-    }
-}
-
 public class DataTransformer : IDataTransformer
 {
     private readonly DirectDataTransformer transformer = new();
 
-    public Stream? Target { get; set; }
+    public Stream? Target { get => transformer.Target; set => transformer.Target = value; }
 
     public void WriteNull()
         => transformer.WriteKind(DataKind.Null);
@@ -98,19 +65,6 @@ public class DataTransformer : IDataTransformer
         }
     }
 
-    public void WriteString(string? value)
-    {
-        if (value is null)
-        {
-            WriteNull();
-        }
-        else
-        {
-            transformer.WriteKind(DataKind.String);
-            transformer.WriteString(value);
-        }
-    }
-
     public void WriteBlock(ReadOnlySpan<byte> value)
     {
         transformer.WriteKind(DataKind.Block);
@@ -123,23 +77,24 @@ public class DataTransformer : IDataTransformer
         transformer.WriteBlock(write);
     }
 
-    public void WriteStart()
-        => transformer.WriteKind(DataKind.Start);
+    public void WriteSequence()
+        => transformer.WriteKind(DataKind.Sequence);
 
-    public void WriteEnd()
-        => transformer.WriteKind(DataKind.End);
-
-    public void WriteType(string name)
+    public void WriteObject(string? type = null)
     {
-        transformer.WriteKind(DataKind.Type);
-        transformer.WriteString(name);
+        transformer.WriteKind(type is null ? DataKind.PropertySequence : DataKind.TypedObject);
+        
+        if (type is not null)
+        {
+            transformer.WriteString(type);
+        }
     }
 
     public void WriteProperty(string name)
-    {
-        transformer.WriteKind(DataKind.Property);
-        transformer.WriteString(name);
-    }
+        => transformer.WriteString(name);
+
+    public void WriteStop()
+        => transformer.WriteKind(DataKind.Stop);
 
     public object? Read(IDynamicBuffer? buffer = null)
         => transformer.ReadKind() switch
@@ -150,12 +105,15 @@ public class DataTransformer : IDataTransformer
             DataKind.Integer => transformer.ReadInteger(),
             DataKind.Single => transformer.ReadSingle(),
             DataKind.Double => transformer.ReadDouble(),
-            DataKind.String => transformer.ReadString(),
             DataKind.Block => transformer.ReadBlock(buffer),
-            DataKind.Start => DataSignal.Start,
-            DataKind.End => DataSignal.End,
+            DataKind.Stop => new DataStopSignal(),
+            DataKind.Sequence => new DataSequenceSignal(),
+            DataKind.PropertySequence => new DataObjectSignal(),
+            DataKind.TypedObject => new DataObjectSignal(transformer.ReadString()),
+            DataKind.PropertySequence => new DataObjectSignal(),
             DataKind.Type => new DataTypeSignal(transformer.ReadString()),
             DataKind.Property => new DataPropertySignal(transformer.ReadString()),
+            DataKind.Items => DataSignal.Items,
             DataKind kind => throw new NotSupportedException(kind.ToString()),
         };
 }

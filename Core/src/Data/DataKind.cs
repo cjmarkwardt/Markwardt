@@ -10,8 +10,8 @@ public enum DataKind : byte
     Double,
     String,
     Block,
-    Start,
-    End,
-    Type,
-    Property
+    Stop,
+    Sequence,
+    PairSequence,
+    PropertySequence,
 }

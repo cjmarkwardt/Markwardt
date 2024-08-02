@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IEntity : IEquatable<IEntity>
+public interface IEntityOld : IEquatable<IEntityOld>
 {
     EntityId Id { get; }
 

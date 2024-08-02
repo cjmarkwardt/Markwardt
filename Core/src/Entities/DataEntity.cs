@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IDataEntity : IEntity
+public interface IDataEntity : IEntityOld
 {
     //DataDictionary Data { get; }
 }

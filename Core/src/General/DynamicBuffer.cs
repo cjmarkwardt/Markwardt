@@ -50,6 +50,7 @@ public class DynamicBuffer : IDynamicBuffer
     public DynamicBuffer(int defaultLength)
     {
         this.defaultLength = defaultLength;
+        length = defaultLength;
         buffer = new byte[defaultLength];
     }
 

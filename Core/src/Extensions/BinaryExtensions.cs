@@ -20,5 +20,5 @@ public static class BinaryExtensions
 
     public static bool GetBit<T>(this T target, int bit)
         where T : IShiftOperators<T, int, T>, IBitwiseOperators<T, T, T>, INumber<T>
-        => (target & (T.One << bit - 1)) != T.Zero;
+        => (target & (T.One << bit)) != T.Zero;
 }

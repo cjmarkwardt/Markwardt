@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IDataSpace
+public interface IDataStore
 {
     ValueTask<int> Create(ReadOnlyMemory<byte>? source = null);
     ValueTask Load(int id, IDynamicBuffer destination);
@@ -8,18 +8,18 @@ public interface IDataSpace
     ValueTask Delete(int id);
 }
 
-public static class DataSpaceExtensions
+public static class DataStoreExtensions
 {
-    public static async ValueTask LoadRoot(this IDataSpace space, IDynamicBuffer destination)
+    public static async ValueTask LoadRoot(this IDataStore space, IDynamicBuffer destination)
         => await space.Load(0, destination);
 
-    public static async ValueTask SaveRoot(this IDataSpace space, ReadOnlyMemory<byte> source)
+    public static async ValueTask SaveRoot(this IDataStore space, ReadOnlyMemory<byte> source)
         => await space.Save(0, source);
 }
 
-public class DataSpace : IDataSpace, IDataSpaceWriter
+public class DataStore : IDataStore, IDataSpaceWriter
 {
-    public DataSpace(Stream stream, int blockSize)
+    public DataStore(Stream stream, int blockSize)
     {
         this.stream = stream;
         this.blockSize = blockSize;

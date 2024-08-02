@@ -2,20 +2,13 @@
 using System.Text;
 using Markwardt;
 
-BigInteger value = -5000000000000000000;
-byte[] buffer = new byte[16];
-value.TryWriteBytes(buffer, out int written, true);
-value = new(buffer, true);
+DataTransformer transformer = new() { Target = new MemoryStream() };
+transformer.WriteType("List[int]");
 
-Console.WriteLine(value);
-return;
+Console.WriteLine(transformer.Target.Length);
 
-MemoryStream stream = new();
-DataTransformer writer = new(stream);
-writer.WriteInteger(5000000000000000000);
-
-DataReader reader = new(stream.ToArray());
-Console.WriteLine(reader.Read());
+transformer.Target.Position = 0;
+Console.WriteLine(transformer.Read());
 
 /*DataSpace space = new(File.Open(@"C:\Users\cjmar\Markwardt\Sandbox\Test.db", FileMode.OpenOrCreate), 10);
 int id = await space.Create(Encoding.UTF8.GetBytes("hello hello hello"));

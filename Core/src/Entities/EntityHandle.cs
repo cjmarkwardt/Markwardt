@@ -36,7 +36,7 @@ public sealed class EntityHandle(Task<IDataEntity> load, IEntityExpirationCalcul
         }
     }
 
-    private EntityClaim CreateClaim(IEntity content)
+    private EntityClaim CreateClaim(IEntityOld content)
     {   
         claims++;
         expiration = null;

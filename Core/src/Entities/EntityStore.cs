@@ -1,6 +1,6 @@
 namespace Markwardt;
 
-public interface IEntityStore : IEntityLoader, IMultiDisposable
+public interface IEntityStoreOld : IEntityLoader, IMultiDisposable
 {
     //[Factory<EntityStore>]
     //delegate ValueTask<IEntityStore> Factory(IDataStore store, IEntityExpirationCalculator? expirationCalculator = null);
@@ -12,7 +12,7 @@ public interface IEntityStore : IEntityLoader, IMultiDisposable
 
 public static class EntityStoreExtensions
 {
-    public static async ValueTask<IEntityClaim> Load(this IEntityStore store, string id)
+    public static async ValueTask<IEntityClaim> Load(this IEntityStoreOld store, string id)
         => await store.Load(store.GetId(id));
 }
 
