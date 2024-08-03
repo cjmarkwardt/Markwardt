@@ -2,44 +2,83 @@ namespace Markwardt;
 
 public interface IDataReader
 {
-    object? Read(IDynamicBuffer? buffer = null);
+    (object? Value, string? Type) Read(IDynamicBuffer? buffer = null);
 
-    bool? ReadBoolean()
-        => (bool?)Read();
+    (bool? Value, string? Type) ReadBoolean()
+    {
+        (object? value, string? type) = Read();
+        return ((bool?)value, type);
+    }
 
-    BigInteger? ReadInteger()
-        => (BigInteger?)Read();
+    (BigInteger? Value, string? Type) ReadInteger()
+    {
+        (object? value, string? type) = Read();
+        return ((BigInteger?)value, type);
+    }
 
-    byte? ReadByte()
-        => (byte?)Read();
+    (byte? Value, string? Type) ReadByte()
+    {
+        (object? value, string? type) = Read();
+        return ((byte?)value, type);
+    }
 
-    sbyte? ReadSignedByte()
-        => (sbyte?)Read();
+    (sbyte? Value, string? Type) ReadSignedByte()
+    {
+        (object? value, string? type) = Read();
+        return ((sbyte?)value, type);
+    }
 
-    short? ReadShort()
-        => (short?)Read();
+    (short? Value, string? Type) ReadShort()
+    {
+        (object? value, string? type) = Read();
+        return ((short?)value, type);
+    }
 
-    ushort? ReadUnsignedShort()
-        => (ushort?)Read();
+    (ushort? Value, string? Type) ReadUnsignedShort()
+    {
+        (object? value, string? type) = Read();
+        return ((ushort?)value, type);
+    }
 
-    int? ReadInt()
-        => (short?)Read();
+    (int? Value, string? Type) ReadInt()
+    {
+        (object? value, string? type) = Read();
+        return ((int?)value, type);
+    }
 
-    uint? ReadUnsignedInt()
-        => (ushort?)Read();
+    (uint? Value, string? Type) ReadUnsignedInt()
+    {
+        (object? value, string? type) = Read();
+        return ((uint?)value, type);
+    }
 
-    long? ReadLong()
-        => (long?)Read();
+    (long? Value, string? Type) ReadLong()
+    {
+        (object? value, string? type) = Read();
+        return ((long?)value, type);
+    }
 
-    ulong? ReadUnsignedLong()
-        => (ulong?)Read();
+    (ulong? Value, string? Type) ReadUnsignedLong()
+    {
+        (object? value, string? type) = Read();
+        return ((ulong?)value, type);
+    }
 
-    float? ReadSingle()
-        => (float?)Read();
+    (float? Value, string? Type) ReadSingle()
+    {
+        (object? value, string? type) = Read();
+        return ((float?)value, type);
+    }
 
-    double? ReadDouble()
-        => (double?)Read();
+    (double? Value, string? Type) ReadDouble()
+    {
+        (object? value, string? type) = Read();
+        return ((double?)value, type);
+    }
 
-    Memory<byte>? ReadBlock(IDynamicBuffer? buffer = null)
-        => (Memory<byte>?)Read(buffer);
+    (Memory<byte>? Value, string? Type) ReadBlock(IDynamicBuffer? buffer = null)
+    {
+        (object? value, string? type) = Read();
+        return ((Memory<byte>?)value, type);
+    }
 }

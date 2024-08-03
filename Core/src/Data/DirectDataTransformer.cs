@@ -8,10 +8,44 @@ public class DirectDataTransformer
     public Stream? Target { get; set; }
 
     public void WriteKind(DataKind kind, string? type)
-        => Target.NotNull().WriteByte((byte)kind);
+    {
+        byte data = (byte)kind;
 
-    public DataKind ReadKind()
-        => (DataKind)Target.NotNull().ReadByte();
+        if (type is not null)
+        {
+            data = data.SetBit(7);
+        }
+
+        Target.NotNull().WriteByte(data);
+
+        if (type is not null)
+        {
+            WriteString(type);
+        }
+    }
+
+    public (DataKind Kind, string? Type) ReadKind()
+    {
+        byte data = (byte)Target.NotNull().ReadByte();
+        bool hasType = data.GetBit(7);
+        data = data.ClearBit(7);
+        return ((DataKind)data, hasType ? ReadString() : null);
+    }
+
+    public void WriteInteger(BigInteger value)
+    {
+        valueBuffer.Length = value.GetByteCount();
+        value.TryWriteBytes(valueBuffer.Data.Span, out _);
+        Target.NotNull().WriteByte((byte)valueBuffer.Length);
+        Target.NotNull().Write(valueBuffer.Data.Span);
+    }
+
+    public BigInteger ReadInteger()
+    {
+        valueBuffer.Length = Target.NotNull().ReadByte();
+        Target.NotNull().Read(valueBuffer.Data.Span);
+        return new BigInteger(valueBuffer.Data.Span);
+    }
 
     public void WriteSingle(float value)
     {
@@ -35,21 +69,6 @@ public class DirectDataTransformer
     {
         Target.NotNull().Read(valueBuffer.Data[..8].Span);
         return BitConverter.ToDouble(valueBuffer.Data.Span);
-    }
-
-    public void WriteInteger(BigInteger value)
-    {
-        valueBuffer.Length = value.GetByteCount();
-        value.TryWriteBytes(valueBuffer.Data.Span, out _);
-        Target.NotNull().WriteByte((byte)valueBuffer.Length);
-        Target.NotNull().Write(valueBuffer.Data.Span);
-    }
-
-    public BigInteger ReadInteger()
-    {
-        valueBuffer.Length = Target.NotNull().ReadByte();
-        Target.NotNull().Read(valueBuffer.Data.Span);
-        return new BigInteger(valueBuffer.Data.Span);
     }
 
     public void WriteBlock(ReadOnlySpan<byte> source)

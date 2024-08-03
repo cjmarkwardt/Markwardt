@@ -11,93 +11,104 @@ public class DataTransformer : IDataTransformer
 
     public Stream? Target { get => transformer.Target; set => transformer.Target = value; }
 
-    public void WriteNull()
-        => transformer.WriteKind(DataKind.Null);
+    public void WriteNull(string? type = null)
+        => transformer.WriteKind(DataKind.Null, type);
 
-    public void WriteBoolean(bool? value)
+    public void WriteBoolean(bool? value, string? type = null)
     {
         if (value is null)
         {
-            WriteNull();
+            WriteNull(type);
         }
         else
         {
-            transformer.WriteKind(value.Value ? DataKind.True : DataKind.False);
+            transformer.WriteKind(value.Value ? DataKind.True : DataKind.False, type);
         }
     }
 
-    public void WriteInteger(BigInteger? value)
+    public void WriteInteger(BigInteger? value, string? type = null)
     {
         if (value is null)
         {
-            WriteNull();
+            WriteNull(type);
         }
         else
         {
-            transformer.WriteKind(DataKind.Integer);
+            transformer.WriteKind(DataKind.Integer, type);
             transformer.WriteInteger(value.Value);
         }
     }
 
-    public void WriteSingle(float? value)
+    public void WriteSingle(float? value, string? type = null)
     {
         if (value is null)
         {
-            WriteNull();
+            WriteNull(type);
         }
         else
         {
-            transformer.WriteKind(DataKind.Single);
+            transformer.WriteKind(DataKind.Single, type);
             transformer.WriteSingle(value.Value);
         }
     }
 
-    public void WriteDouble(double? value)
+    public void WriteDouble(double? value, string? type = null)
     {
         if (value is null)
         {
-            WriteNull();
+            WriteNull(type);
         }
         else
         {
-            transformer.WriteKind(DataKind.Double);
+            transformer.WriteKind(DataKind.Double, type);
             transformer.WriteDouble(value.Value);
         }
     }
 
-    public void WriteBlock(ReadOnlySpan<byte> value)
+    public void WriteString(string? value, string? type = null)
     {
-        transformer.WriteKind(DataKind.Block);
+        if (value is null)
+        {
+            WriteNull(type);
+        }
+        else
+        {
+            transformer.WriteKind(DataKind.String, type);
+            transformer.WriteString(value);
+        }
+    }
+
+    public void WriteBlock(ReadOnlySpan<byte> value, string? type = null)
+    {
+        transformer.WriteKind(DataKind.Block, type);
         transformer.WriteBlock(value);
     }
 
-    public void WriteBlock(Action<IDynamicBuffer> write)
+    public void WriteBlock(Action<IDynamicBuffer> write, string? type = null)
     {
-        transformer.WriteKind(DataKind.Block);
+        transformer.WriteKind(DataKind.Block, type);
         transformer.WriteBlock(write);
     }
 
-    public void WriteSequence()
-        => transformer.WriteKind(DataKind.Sequence);
+    public void WriteSequence(string? type = null)
+        => transformer.WriteKind(DataKind.Sequence, type);
 
-    public void WriteObject(string? type = null)
-    {
-        transformer.WriteKind(type is null ? DataKind.PropertySequence : DataKind.TypedObject);
-        
-        if (type is not null)
-        {
-            transformer.WriteString(type);
-        }
-    }
+    public void WritePairSequence(string? type = null)
+        => transformer.WriteKind(DataKind.PairSequence, type);
+
+    public void WritePropertySequence(string? type = null)
+        => transformer.WriteKind(DataKind.PropertySequence, type);
 
     public void WriteProperty(string name)
         => transformer.WriteString(name);
 
-    public void WriteStop()
-        => transformer.WriteKind(DataKind.Stop);
+    public void WriteStopSequence()
+        => transformer.WriteKind(DataKind.SequenceStop, null);
 
-    public object? Read(IDynamicBuffer? buffer = null)
-        => transformer.ReadKind() switch
+    public (object? Value, string? Type) Read(IDynamicBuffer? buffer = null)
+    {
+        (DataKind kind, string? type) = transformer.ReadKind();
+        return kind switch
         {
             DataKind.Null => null,
             DataKind.False => false,
@@ -106,14 +117,15 @@ public class DataTransformer : IDataTransformer
             DataKind.Single => transformer.ReadSingle(),
             DataKind.Double => transformer.ReadDouble(),
             DataKind.Block => transformer.ReadBlock(buffer),
-            DataKind.Stop => new DataStopSignal(),
             DataKind.Sequence => new DataSequenceSignal(),
             DataKind.PropertySequence => new DataObjectSignal(),
+            DataKind.SequenceStop => new DataStopSignal(),
             DataKind.TypedObject => new DataObjectSignal(transformer.ReadString()),
             DataKind.PropertySequence => new DataObjectSignal(),
             DataKind.Type => new DataTypeSignal(transformer.ReadString()),
             DataKind.Property => new DataPropertySignal(transformer.ReadString()),
             DataKind.Items => DataSignal.Items,
-            DataKind kind => throw new NotSupportedException(kind.ToString()),
+            _ => throw new NotSupportedException(kind.ToString()),
         };
+    }
 }
